@@ -127,7 +127,7 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
             ref={fileInputRef}
             id="mriFileInput"
             type="file"
-            accept=".nii,.nii.gz,.png"
+            accept=".nii,.nii.gz,.png,.jpg,.jpeg"
             style={{ display: 'none' }}
             onChange={handleFileChange}
           />
@@ -140,7 +140,7 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
                 {selectedFile ? selectedFile.name : 'Select or Drag & Drop Brain MRI Scan'}
               </h4>
               <p style={{ fontSize: '0.84rem', color: 'var(--slate-500)', marginTop: '4px' }}>
-                Supports standard 3D NIfTI scans (<code>.nii</code>, <code>.nii.gz</code>) or 2D MRI slices (<code>.png</code>)
+                Supports 3D NIfTI scans (<code>.nii</code>, <code>.nii.gz</code>), 2D slices (<code>.png</code>), and photos (<code>.jpg</code>, <code>.jpeg</code>)
               </p>
             </div>
 
@@ -156,10 +156,12 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
               📁 Select MRI Scan File
             </button>
 
-            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
               <span className="badge badge-standby">.NII</span>
               <span className="badge badge-standby">.NII.GZ</span>
               <span className="badge badge-standby">.PNG</span>
+              <span className="badge badge-standby">.JPG</span>
+              <span className="badge badge-standby">.JPEG</span>
             </div>
           </div>
         </div>
@@ -263,6 +265,25 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
                   }} />
                 </div>
               </div>
+
+              {/* Quality & Mobile Capture Advisory */}
+              {uploadResult.prediction?.quality_advisory && (
+                <div style={{
+                  marginTop: '14px',
+                  padding: '10px 14px',
+                  background: uploadResult.prediction?.is_mobile_photo ? '#fffbeb' : '#f8fafc',
+                  border: uploadResult.prediction?.is_mobile_photo ? '1px solid #fde68a' : '1px solid #e2e8f0',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: '0.84rem',
+                  color: uploadResult.prediction?.is_mobile_photo ? '#92400e' : '#475569',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <span style={{ fontSize: '1.1rem' }}>{uploadResult.prediction?.is_mobile_photo ? '📷' : 'ℹ️'}</span>
+                  <span><strong>Capture Status:</strong> {uploadResult.prediction.quality_advisory}</span>
+                </div>
+              )}
             </div>
           ) : (
             <div className="alert alert-info" style={{ marginBottom: '20px' }}>

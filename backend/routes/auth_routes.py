@@ -96,8 +96,7 @@ def get_demo_users():
     """Return available demo personas for quick prototype navigation."""
     return jsonify({
         "personas": [
-            {"email": "patient@demo.neurobehavior.org", "role": "patient", "name": "Patient / Parent User"},
-            {"email": "clinician@demo.neurobehavior.org", "role": "clinician", "name": "Dr. Sarah Chen, MD"},
+            {"email": "patient@demo.neurobehavior.org", "role": "patient", "name": "Demo Patient"},
             {"email": "admin@demo.neurobehavior.org", "role": "admin", "name": "System Administrator"},
         ]
     }), 200

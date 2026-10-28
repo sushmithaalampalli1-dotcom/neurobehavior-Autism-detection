@@ -108,7 +108,6 @@ def _seed_demo_personas():
     from backend.models.user import User
     demo_users = [
         {"email": "patient@demo.neurobehavior.org", "name": "Demo Patient", "role": "patient", "pass": "password123"},
-        {"email": "clinician@demo.neurobehavior.org", "name": "Dr. Sarah Chen, MD", "role": "clinician", "pass": "password123"},
         {"email": "admin@demo.neurobehavior.org", "name": "System Administrator", "role": "admin", "pass": "admin123"},
     ]
     for d in demo_users:

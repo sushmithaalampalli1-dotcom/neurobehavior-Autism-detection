@@ -38,10 +38,7 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
     let demoEmail = 'patient@demo.neurobehavior.org';
     let demoPass = 'password123';
 
-    if (demoRole === 'clinician') {
-      demoEmail = 'clinician@demo.neurobehavior.org';
-      demoPass = 'password123';
-    } else if (demoRole === 'admin') {
+    if (demoRole === 'admin') {
       demoEmail = 'admin@demo.neurobehavior.org';
       demoPass = 'admin123';
     }
@@ -170,28 +167,13 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
             />
           </div>
 
-          {isRegister && (
-            <div className="form-group">
-              <label className="form-label" htmlFor="regRole">Account Type</label>
-              <select
-                id="regRole"
-                className="form-select"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-              >
-                <option value="patient">Patient / Parent / Guardian</option>
-                <option value="clinician">Pediatrician / Clinical Specialist</option>
-              </select>
-            </div>
-          )}
-
           <button
             type="submit"
             className="btn btn-primary"
-            style={{ width: '100%', padding: '12px', fontSize: '0.96rem', marginTop: '4px' }}
+            style={{ width: '100%', padding: '12px', fontSize: '0.96rem', marginTop: '8px' }}
             disabled={loading}
           >
-            {loading ? 'Authenticating...' : (isRegister ? 'Register & Continue ➔' : 'Sign In ➔')}
+            {loading ? 'Authenticating...' : (isRegister ? 'Register Patient Account ➔' : 'Sign In ➔')}
           </button>
         </form>
 
@@ -200,36 +182,26 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
           <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', textAlign: 'center', marginBottom: '10px' }}>
             Or Instant 1-Click Demo Access
           </span>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
             <button
               type="button"
               className="btn btn-secondary"
-              style={{ fontSize: '0.82rem', padding: '10px 8px', flexDirection: 'column', gap: '4px' }}
+              style={{ fontSize: '0.86rem', padding: '12px 10px', flexDirection: 'column', gap: '4px' }}
               onClick={() => loginWithDemo('patient')}
               disabled={loading}
             >
-              <span style={{ fontSize: '1.2rem' }}>👤</span>
-              <strong>Patient</strong>
+              <span style={{ fontSize: '1.3rem' }}>👤</span>
+              <strong>Demo Patient</strong>
             </button>
             <button
               type="button"
               className="btn btn-secondary"
-              style={{ fontSize: '0.82rem', padding: '10px 8px', flexDirection: 'column', gap: '4px' }}
-              onClick={() => loginWithDemo('clinician')}
-              disabled={loading}
-            >
-              <span style={{ fontSize: '1.2rem' }}>🩺</span>
-              <strong>Clinician</strong>
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              style={{ fontSize: '0.82rem', padding: '10px 8px', flexDirection: 'column', gap: '4px' }}
+              style={{ fontSize: '0.86rem', padding: '12px 10px', flexDirection: 'column', gap: '4px' }}
               onClick={() => loginWithDemo('admin')}
               disabled={loading}
             >
-              <span style={{ fontSize: '1.2rem' }}>⚙️</span>
-              <strong>Admin</strong>
+              <span style={{ fontSize: '1.3rem' }}>⚙️</span>
+              <strong>Admin Account</strong>
             </button>
           </div>
         </div>

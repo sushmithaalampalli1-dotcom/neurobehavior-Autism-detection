@@ -26,7 +26,7 @@ export default function DashboardPage({ user, navigate }) {
             Welcome, {user ? user.full_name : 'Patient User'}
           </h2>
           <p style={{ fontSize: '0.88rem', color: 'var(--slate-600)', marginTop: '2px' }}>
-            Portal Access: <span className="badge badge-info">{user?.role === 'admin' ? 'Specialist / Clinician' : 'Patient Portal'}</span>
+            Portal Access: <span className="badge badge-info">{user?.role === 'admin' ? 'Administrator Portal' : 'Patient Portal'}</span>
             {' • '}
             System Status: <span className="badge badge-success">Clinical Services Active</span>
           </p>
