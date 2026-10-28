@@ -1,0 +1,10 @@
+{
+  "experiment_name": "neurobehavior_asd_2d_cnn_baseline",
+  "random_seed": 42,
+  "trained_model_path": "C:\\Users\\ankit\\.gemini\\antigravity\\scratch\\neurobehavior-asd\\training\\saved_models\\neurobehavior_2d_cnn.keras",
+  "input_dimensions": "224x224x1",
+  "epochs_trained": 6,
+  "best_epoch": 1,
+  "best_val_loss": 0.702,
+  "best_val_auc": 0.5499
+}

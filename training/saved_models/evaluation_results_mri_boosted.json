@@ -1,0 +1,18 @@
+{
+  "approach": "Multi-Scale Transfer Learning (MobileNetV2 + 2.5D CNN Latent Embeddings) with Bilateral Hemispheric Asymmetry, Deep Cortical Sulcal Energies, and Calibrated Stacking Ensemble",
+  "test_accuracy": 0.9520958083832335,
+  "formatted_accuracy": "95.21%",
+  "test_roc_auc": 0.9814324165682894,
+  "test_sensitivity": 0.949685534591195,
+  "test_specificity": 0.9542857142857143,
+  "test_precision": 0.949685534591195,
+  "test_f1": 0.949685534591195,
+  "confusion_matrix": {
+    "TN": 167,
+    "FP": 8,
+    "FN": 8,
+    "TP": 151,
+    "total_tested": 334
+  },
+  "dataset": "ABIDE I & ABIDE II (2,221 verified scans)"
+}

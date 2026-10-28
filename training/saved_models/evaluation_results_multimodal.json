@@ -1,0 +1,19 @@
+{
+  "model_name": "NeuroBehavior-ASD 76.95% Deep Latent Embedding Multimodal Model",
+  "approach": "Deep 64-Dim CNN Embedding + Phenotypic Covariates + Tissue Quality Stacking",
+  "threshold": 0.47,
+  "test_metrics": {
+    "accuracy": 0.7695,
+    "roc_auc": 0.8592,
+    "asd_recall_sensitivity": 0.7044,
+    "control_specificity": 0.8286,
+    "asd_precision": 0.7887,
+    "asd_f1": 0.7442,
+    "confusion_matrix": {
+      "true_negative": 145,
+      "false_positive": 30,
+      "false_negative": 47,
+      "true_positive": 112
+    }
+  }
+}

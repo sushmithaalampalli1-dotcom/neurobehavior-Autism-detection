@@ -1,0 +1,28 @@
+# NeuroBehavior-ASD Backend Dependencies
+# Python Compatibility: Tested with Python 3.11 / 3.12 (TensorFlow wheels recommended on Python <= 3.12)
+
+# Web Framework & Extensions
+Flask>=3.0.0
+Flask-Cors>=4.0.0
+Flask-SQLAlchemy>=3.1.0
+python-dotenv>=1.0.0
+Werkzeug>=3.0.0
+
+# Neuroimaging & Scientific Computing
+nibabel>=5.2.0
+numpy>=1.26.0
+scipy>=1.11.0
+pillow>=10.0.0
+opencv-python>=4.8.0
+
+# PDF Generation
+reportlab>=4.0.0
+
+# Machine Learning / Deep Learning Framework
+# Note: For initial setup and skeleton testing, TensorFlow can be installed.
+# On Windows, install TensorFlow via: pip install tensorflow
+tensorflow>=2.15.0; python_version < '3.13'
+
+# Testing & Utilities
+pytest>=8.0.0
+requests>=2.31.0

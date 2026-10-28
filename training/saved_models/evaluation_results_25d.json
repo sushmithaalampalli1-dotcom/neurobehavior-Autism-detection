@@ -1,0 +1,22 @@
+{
+  "model_name": "NeuroBehavior-ASD 2.5D Multi-Channel CNN (with Bilateral TTA)",
+  "approach": "Multi-Channel 2.5D Feature Representation (Raw + Sobel Gradient + CLAHE Subcortical Contrast) + Bilateral Hemisphere Mirror Test-Time Augmentation",
+  "input_shape": [
+    224,
+    224,
+    3
+  ],
+  "parameters_count": 65441,
+  "threshold": 0.56,
+  "test_metrics": {
+    "accuracy": 0.5449,
+    "raw_inference_accuracy": 0.5329,
+    "asd_precision": 0.5255,
+    "asd_recall_sensitivity": 0.4528,
+    "baseline_asd_recall": 0.2201,
+    "control_specificity": 0.6286,
+    "asd_f1": 0.4865,
+    "roc_auc": 0.5307,
+    "bilateral_tta_enabled": true
+  }
+}

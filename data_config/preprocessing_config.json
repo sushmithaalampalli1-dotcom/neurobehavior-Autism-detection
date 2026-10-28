@@ -1,0 +1,21 @@
+{
+  "modality": "2D Structural Brain MRI",
+  "input_shape": [224, 224, 1],
+  "color_mode": "grayscale",
+  "pixel_scaling": {
+    "method": "min_max_rescale",
+    "range": [0.0, 1.0],
+    "factor": 0.00392156862745098
+  },
+  "training_augmentation": {
+    "enabled": true,
+    "horizontal_flip": true,
+    "rotation_range": 0.02,
+    "zoom_range": 0.05,
+    "justification": "Simulates subtle head positioning variations (slight tilt and FOV scaling) without distorting intracranial volume or creating non-anatomical artifacts."
+  },
+  "validation_test_policy": {
+    "augmentation_applied": false,
+    "deterministic_rescaling_only": true
+  }
+}

@@ -1,0 +1,347 @@
+{
+  "model_name": "NeuroBehavior-ASD 2D CNN Baseline",
+  "version": "1.0.0",
+  "architecture": {
+    "type": "2D Convolutional Neural Network (4 Conv Blocks + GAP + Dense)",
+    "input_shape": [
+      224,
+      224,
+      1
+    ],
+    "parameters_count": 65153,
+    "loss": "binary_crossentropy",
+    "optimizer": "Adam(lr=2e-4)"
+  },
+  "dataset": {
+    "sources": [
+      "ABIDE I",
+      "ABIDE II"
+    ],
+    "total_participants": 2221,
+    "splits": {
+      "train_participants": 1554,
+      "val_participants": 333,
+      "test_participants": 334
+    },
+    "class_distribution": {
+      "ASD_DX1": 1058,
+      "Control_DX2": 1163
+    }
+  },
+  "threshold_selection": {
+    "procedure": "Youden's J statistic optimization evaluated exclusively on Validation split",
+    "evaluated_range": [
+      0.1,
+      0.9
+    ],
+    "best_validation_threshold": 0.55,
+    "best_validation_youden_j": 0.015181088700932488,
+    "best_validation_f1": 0.2605
+  },
+  "test_results_selected_threshold": {
+    "description": "Validation-Selected Threshold (0.550)",
+    "threshold": 0.55,
+    "accuracy": 0.5509,
+    "accuracy_95ci": [
+      0.4973,
+      0.6034
+    ],
+    "asd_precision": 0.5738,
+    "asd_recall_sensitivity": 0.2201,
+    "sensitivity_95ci": [
+      0.1627,
+      0.2907
+    ],
+    "control_specificity": 0.8514,
+    "specificity_95ci": [
+      0.7912,
+      0.8965
+    ],
+    "asd_f1": 0.3182,
+    "macro_f1": 0.4917,
+    "roc_auc": 0.5227,
+    "confusion_matrix": {
+      "true_negative": 149,
+      "false_positive": 26,
+      "false_negative": 124,
+      "true_positive": 35
+    },
+    "sample_counts": {
+      "total_test_samples": 334,
+      "asd_samples": 159,
+      "control_samples": 175
+    }
+  },
+  "test_results_default_threshold": {
+    "description": "Default 0.5 Threshold",
+    "threshold": 0.5,
+    "accuracy": 0.476,
+    "accuracy_95ci": [
+      0.4231,
+      0.5296
+    ],
+    "asd_precision": 0.476,
+    "asd_recall_sensitivity": 1.0,
+    "sensitivity_95ci": [
+      0.9764,
+      1.0
+    ],
+    "control_specificity": 0.0,
+    "specificity_95ci": [
+      0.0,
+      0.0215
+    ],
+    "asd_f1": 0.645,
+    "macro_f1": 0.3225,
+    "roc_auc": 0.5227,
+    "confusion_matrix": {
+      "true_negative": 0,
+      "false_positive": 175,
+      "false_negative": 0,
+      "true_positive": 159
+    },
+    "sample_counts": {
+      "total_test_samples": 334,
+      "asd_samples": 159,
+      "control_samples": 175
+    }
+  },
+  "site_confounding_audit": [
+    {
+      "site_id": "ABIDEII-BNI_1",
+      "n_samples": 6,
+      "accuracy": 0.8333,
+      "asd_count": 1,
+      "control_count": 5
+    },
+    {
+      "site_id": "ABIDEII-EMC_1",
+      "n_samples": 8,
+      "accuracy": 0.25,
+      "asd_count": 6,
+      "control_count": 2
+    },
+    {
+      "site_id": "ABIDEII-ETH_1",
+      "n_samples": 6,
+      "accuracy": 0.6667,
+      "asd_count": 2,
+      "control_count": 4
+    },
+    {
+      "site_id": "ABIDEII-GU_1",
+      "n_samples": 16,
+      "accuracy": 0.375,
+      "asd_count": 10,
+      "control_count": 6
+    },
+    {
+      "site_id": "ABIDEII-IP_1",
+      "n_samples": 11,
+      "accuracy": 0.5455,
+      "asd_count": 5,
+      "control_count": 6
+    },
+    {
+      "site_id": "ABIDEII-KKI_1",
+      "n_samples": 28,
+      "accuracy": 0.7143,
+      "asd_count": 7,
+      "control_count": 21
+    },
+    {
+      "site_id": "ABIDEII-NYU_1",
+      "n_samples": 17,
+      "accuracy": 0.4706,
+      "asd_count": 13,
+      "control_count": 4
+    },
+    {
+      "site_id": "ABIDEII-NYU_2",
+      "n_samples": 4,
+      "accuracy": 0.75,
+      "asd_count": 4,
+      "control_count": 0
+    },
+    {
+      "site_id": "ABIDEII-OHSU_1",
+      "n_samples": 18,
+      "accuracy": 0.7778,
+      "asd_count": 4,
+      "control_count": 14
+    },
+    {
+      "site_id": "ABIDEII-OILH_2",
+      "n_samples": 11,
+      "accuracy": 0.4545,
+      "asd_count": 5,
+      "control_count": 6
+    },
+    {
+      "site_id": "ABIDEII-SDSU_1",
+      "n_samples": 9,
+      "accuracy": 0.4444,
+      "asd_count": 4,
+      "control_count": 5
+    },
+    {
+      "site_id": "ABIDEII-SU_2",
+      "n_samples": 6,
+      "accuracy": 0.8333,
+      "asd_count": 3,
+      "control_count": 3
+    },
+    {
+      "site_id": "ABIDEII-TCD_1",
+      "n_samples": 6,
+      "accuracy": 0.5,
+      "asd_count": 3,
+      "control_count": 3
+    },
+    {
+      "site_id": "ABIDEII-UCD_1",
+      "n_samples": 4,
+      "accuracy": 0.75,
+      "asd_count": 3,
+      "control_count": 1
+    },
+    {
+      "site_id": "ABIDEII-UCLA_1",
+      "n_samples": 4,
+      "accuracy": 0.75,
+      "asd_count": 1,
+      "control_count": 3
+    },
+    {
+      "site_id": "ABIDEII-USM_1",
+      "n_samples": 6,
+      "accuracy": 0.6667,
+      "asd_count": 2,
+      "control_count": 4
+    },
+    {
+      "site_id": "ABIDEII-U_MIA_1",
+      "n_samples": 4,
+      "accuracy": 0.5,
+      "asd_count": 2,
+      "control_count": 2
+    },
+    {
+      "site_id": "CALTECH",
+      "n_samples": 8,
+      "accuracy": 0.375,
+      "asd_count": 5,
+      "control_count": 3
+    },
+    {
+      "site_id": "KKI",
+      "n_samples": 11,
+      "accuracy": 0.5455,
+      "asd_count": 5,
+      "control_count": 6
+    },
+    {
+      "site_id": "LEUVEN_2",
+      "n_samples": 8,
+      "accuracy": 0.375,
+      "asd_count": 4,
+      "control_count": 4
+    },
+    {
+      "site_id": "MAX_MUN",
+      "n_samples": 7,
+      "accuracy": 0.7143,
+      "asd_count": 2,
+      "control_count": 5
+    },
+    {
+      "site_id": "NYU",
+      "n_samples": 30,
+      "accuracy": 0.6333,
+      "asd_count": 13,
+      "control_count": 17
+    },
+    {
+      "site_id": "OLIN",
+      "n_samples": 4,
+      "accuracy": 0.5,
+      "asd_count": 2,
+      "control_count": 2
+    },
+    {
+      "site_id": "PITT",
+      "n_samples": 9,
+      "accuracy": 0.4444,
+      "asd_count": 3,
+      "control_count": 6
+    },
+    {
+      "site_id": "SDSU",
+      "n_samples": 6,
+      "accuracy": 0.8333,
+      "asd_count": 1,
+      "control_count": 5
+    },
+    {
+      "site_id": "STANFORD",
+      "n_samples": 4,
+      "accuracy": 0.25,
+      "asd_count": 2,
+      "control_count": 2
+    },
+    {
+      "site_id": "TRINITY",
+      "n_samples": 9,
+      "accuracy": 0.6667,
+      "asd_count": 4,
+      "control_count": 5
+    },
+    {
+      "site_id": "UCLA_1",
+      "n_samples": 16,
+      "accuracy": 0.4375,
+      "asd_count": 9,
+      "control_count": 7
+    },
+    {
+      "site_id": "UCLA_2",
+      "n_samples": 3,
+      "accuracy": 0.6667,
+      "asd_count": 1,
+      "control_count": 2
+    },
+    {
+      "site_id": "UM_1",
+      "n_samples": 13,
+      "accuracy": 0.4615,
+      "asd_count": 7,
+      "control_count": 6
+    },
+    {
+      "site_id": "UM_2",
+      "n_samples": 5,
+      "accuracy": 0.4,
+      "asd_count": 3,
+      "control_count": 2
+    },
+    {
+      "site_id": "USM",
+      "n_samples": 16,
+      "accuracy": 0.375,
+      "asd_count": 10,
+      "control_count": 6
+    },
+    {
+      "site_id": "YALE",
+      "n_samples": 11,
+      "accuracy": 0.4545,
+      "asd_count": 6,
+      "control_count": 5
+    }
+  ],
+  "scientific_limitations": [
+    "2D slices capture single neuroanatomical planes, discarding 3D morphometric context.",
+    "Cross-site scanner variations (field strength, coil geometry, pulse sequence) induce inter-site domain shifts.",
+    "Structural MRI biomarkers alone do not provide definitive diagnostic conclusions; clinical evaluations remain mandatory."
+  ]
+}

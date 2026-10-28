@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+dist/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+
+# Large temporary feature cache
+data_config/mri_features_cache/
+*.npy
+*.npz
+
+# Database & local instances
+*.db
+*.sqlite
+*.sqlite3
+instance/
+
+# Uploads and generated reports
+uploads/*
+!uploads/.gitkeep
+reports/generated/*.pdf
+!reports/generated/.gitkeep
+
+# Environment variables
+.env
+.env.local
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE and OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Model weights: allow core trained models under 50MB, ignore any giant raw weights
+*.h5
+*.ckpt
+training/saved_models/*.tmp

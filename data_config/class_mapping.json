@@ -1,0 +1,27 @@
+{
+  "project": "NeuroBehavior-ASD",
+  "task": "Binary Classification of Structural 2D MRI Brain Biomarkers",
+  "phenotypic_variable": "DX_GROUP",
+  "classes": {
+    "1": {
+      "clinical_name": "Autism Spectrum Disorder (ASD)",
+      "folder_name": "Autistic",
+      "model_target_index": 1,
+      "short_code": "ASD"
+    },
+    "2": {
+      "clinical_name": "Typical Control (TC) / Non-Autism",
+      "folder_name": "Non Autistic",
+      "model_target_index": 0,
+      "short_code": "Control"
+    }
+  },
+  "index_to_label": {
+    "0": "Control",
+    "1": "ASD"
+  },
+  "target_to_index": {
+    "Control": 0,
+    "ASD": 1
+  }
+}
