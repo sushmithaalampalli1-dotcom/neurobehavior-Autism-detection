@@ -16,18 +16,18 @@
 \usepackage{microtype}
 \usepackage{balance}
 
-% Hyphenation fixes
-\hyphenation{op-ti-cal net-works semi-conduc-tor neu-ro-im-ag-ing pre-pro-cess-ing}
+% Hyphenation
+\hyphenation{op-ti-cal net-works semi-conduc-tor neu-ro-im-ag-ing}
 
 \begin{document}
 
 % =========================================================================
 % PAPER TITLE
 % =========================================================================
-\title{NeuroBehavior-ASD: An Integrated Multi-Scale Neuroimaging and Behavioral Decision Support Architecture for Early Autism Screening}
+\title{NeuroBehavior-ASD: A Deep Learning and Behavioral Support System for Early Autism Screening}
 
 % =========================================================================
-% AUTHORS & AFFILIATIONS (Update with your team details)
+% AUTHORS & AFFILIATIONS
 % =========================================================================
 \author{
 \IEEEauthorblockN{Author One\IEEEauthorrefmark{1}, Author Two\IEEEauthorrefmark{2}, Author Three\IEEEauthorrefmark{1}, and Author Four\IEEEauthorrefmark{3}}
@@ -43,293 +43,258 @@
 % ABSTRACT
 % =========================================================================
 \begin{abstract}
-Diagnostic pathways for Autism Spectrum Disorder (ASD) face acute global bottlenecks. Standard clinical evaluations rely on intensive observational examinations (such as ADOS-2 and ADI-R) administered by scarce multidisciplinary specialists, leaving families on waitlists that often stretch from months into years. Because the therapeutic benefits of neurodevelopmental interventions peak during early toddlerhood when neural plasticity is highest, these diagnostic delays carry lasting consequences for adaptive functioning and language acquisition. 
+Autism Spectrum Disorder (ASD) is a developmental condition that affects how a person communicates, learns, and interacts with others. Starting therapy early---especially when a child is between 1 and 3 years old---makes a huge difference in their language and daily living skills. However, getting an official diagnosis often takes months or even years because standard tests require hours of examination by scarce specialists. 
 
-To help alleviate this backlog, we present \textbf{NeuroBehavior-ASD}, a clinical decision support framework that pairs structural magnetic resonance imaging (sMRI) biomarkers with culturally validated behavioral intake and localized geographic referral routing. Addressing the operational realities of frontline healthcare, the system incorporates a universal ingestion pipeline capable of parsing 3D volumetric NIfTI scans (\texttt{.nii}, \texttt{.nii.gz}), lossless slice exports (\texttt{.png}), standard hospital PACS image files (\texttt{.jpg}, \texttt{.jpeg}), and smartphone photographs of physical lightbox films via automated perspective rectification and glare attenuation. To bypass the excessive memory demands of 3D convolutions while avoiding the loss of tissue contrast seen in single-slice 2D models, we introduce a \textbf{2.5D spatial tensor formulation} ($224 \times 224 \times 3$) that blends raw normalized brain radiodensity with Sobel directional edge transitions and Contrast Limited Adaptive Histogram Equalization (CLAHE) tuned for deep subcortical structures. Feature representations are extracted using MobileNetV2 inverted residual blocks, custom 2.5D convolutional latent bottlenecks, and bilateral hemispheric asymmetry vectors, then classified through a calibrated gradient-boosted ensemble with validation-optimized Youden's $J$ thresholding.
+To help doctors screen children faster, we built \textbf{NeuroBehavior-ASD}, an easy-to-use system that combines brain MRI scans with a simple parent questionnaire and a hospital map. Our system can read almost any scan format used in hospitals, including 3D medical files (\texttt{.nii}, \texttt{.nii.gz}), regular images (\texttt{.png}, \texttt{.jpg}, \texttt{.jpeg}), and even smartphone photos of physical MRI films held up to a light board. To avoid using heavy 3D models that crash normal computers or basic 2D models that miss too much detail, we convert each scan into a smart \textbf{3-layer image (2.5D tensor)}: (1) the original clean brain scan, (2) an edge-detection layer that highlights brain tissue boundaries, and (3) a contrast layer that brings out deep brain structures. We also check for differences between the left and right halves of the brain, because children with autism often show differences in brain symmetry. 
 
-We validated the pipeline across two separate benchmarks: (1) \textbf{2,221 verified participants} from 24 international clinical sites in the ABIDE I and ABIDE II repositories, evaluated under a strict subject-stratified holdout split, and (2) an independent \textbf{Pediatric 2-Months JPEG Cohort} of 250 verified infant/toddler axial scans (125 ASD, 125 neurotypical controls). On the untouched 334-subject ABIDE test set, the multi-scale boosted ensemble achieved \textbf{95.21\% test accuracy}, an \textbf{ROC-AUC of 0.9814}, \textbf{94.97\% sensitivity}, and \textbf{95.43\% specificity}, notably surpassing conventional 2D baselines. On the untouched 38-scan pediatric test set, the pipeline attained \textbf{100\% test accuracy} and \textbf{1.00 ROC-AUC}, reflecting the distinct morphological separation observable during early developmental windows under uniform imaging protocols. Coupling this visual inference engine with the 10-item Indian Autism Screening Questionnaire (IASQ; PMC8062015 validated) and an interactive OpenStreetMap referral directory, NeuroBehavior-ASD delivers automated, doctor-readable clinical summaries designed for deployment in resource-constrained clinical settings.
+We tested our model on \textbf{2,221 patients} from the global ABIDE dataset across 24 hospitals. On 334 test patients whose data the model had never seen before, it achieved \textbf{95.21\% accuracy}, a \textbf{0.9814 ROC-AUC score}, \textbf{94.97\% sensitivity} (catching nearly all autism cases), and \textbf{95.43\% specificity}. We also tested it on a special dataset of \textbf{250 baby and toddler scans (the 2-Months Pediatric JPEG dataset)}, where it scored \textbf{100\% accuracy} on 38 test scans. By pairing the MRI results with the 10-question Indian Autism Screening Questionnaire (IASQ) and a map that finds the nearest verified clinic, this tool gives doctors clear reports to help families get care without unnecessary delays.
 \end{abstract}
 
 % =========================================================================
 % KEYWORDS
 % =========================================================================
 \begin{IEEEkeywords}
-Autism Spectrum Disorder (ASD), Deep Learning, Structural MRI, 2.5D Convolutional Neural Networks, Transfer Learning, MobileNetV2, Multi-Format Ingestion, Pediatric Neuroimaging, Indian Autism Screening Questionnaire (IASQ), ABIDE Repository, Clinical Decision Support Systems.
+Autism Spectrum Disorder, Brain MRI, Deep Learning, MobileNetV2, Early Child Screening, Simple Medical AI, Indian Autism Screening Questionnaire (IASQ), ABIDE Dataset.
 \end{IEEEkeywords}
 
 % =========================================================================
 % SECTION I: INTRODUCTION
 % =========================================================================
 \section{Introduction}
-\IEEEPARstart{A}{utism} Spectrum Disorder (ASD) encompasses a spectrum of neurodevelopmental profiles marked by differences in social reciprocity, atypical verbal and non-verbal communication, and repetitive or restricted motor patterns and interests \cite{american2022dsm5}. Recent epidemiological estimates from the Centers for Disease Control and Prevention indicate that roughly 1 in 36 children in the United States meet diagnostic criteria, with corresponding upward trends documented across international health registries \cite{maenner2023prevalence}. Decades of pediatric research show that developmental outcomes improve markedly when specialized interventions begin during toddlerhood (typically prior to 36 to 48 months of age). During this critical window, heightened synaptic plasticity allows targeted behavioral, communicative, and sensory therapies to build foundational adaptive skills \cite{dawson2010randomized}.
+\IEEEPARstart{A}{utism} Spectrum Disorder (ASD) affects how children communicate, play, and connect with people around them \cite{american2022dsm5}. Today, health agencies like the CDC report that about 1 in every 36 children is on the autism spectrum \cite{maenner2023prevalence}. Doctors and scientists know that the best time to help a child is when they are very young, usually before age 3 or 4. At this age, a toddler's brain is growing quickly and can easily learn new skills with the right speech and behavioral therapy \cite{dawson2010randomized}.
 
-Despite this window of opportunity, clinical reality rarely matches developmental urgency. A substantial diagnostic delay persists globally. Formal confirmation of an autism diagnosis currently depends on gold-standard observational protocols, most notably the Autism Diagnostic Observation Schedule, Second Edition (ADOS-2) and the Autism Diagnostic Interview-Revised (ADI-R) \cite{lord2000autism}. Administering these tools requires certified clinicians, multi-disciplinary child development teams, and 2 to 4 hours of dedicated testing per patient. In developing economies and secondary healthcare networks, acute shortages of accredited specialists lead to regional backlogs of 18 to 36 months, meaning many children are only diagnosed well after entering primary school.
+The main problem today is that getting a diagnosis takes far too long. The standard tests used by doctors---like ADOS-2 and ADI-R---take 2 to 4 hours and require highly trained specialists \cite{lord2000autism}. Because there are not enough specialists, families in small towns and developing regions often wait 1 to 3 years just to get an appointment. By the time a child is finally diagnosed, they may already be in school and have missed their best window for early therapy.
 
-Computer-aided screening using structural Magnetic Resonance Imaging (sMRI) offers a promising avenue to augment developmental triage. Structural MRI provides clear anatomical views of cerebral tissue without ionising radiation. Neuroanatomical studies have linked early autistic trajectories with distinct structural markers, including accelerated total brain volume overgrowth in infancy, bilateral cortical surface expansion across frontal and temporal regions, altered sulcal geometry, and atypical morphometry in subcortical structures like the caudate, putamen, and amygdala \cite{hazlett2017early, herbert2004localization}.
+Brain scans, especially structural Magnetic Resonance Imaging (sMRI), can help. Brain scans take clear, safe pictures of the brain without using radiation. Research has shown that children with autism often have specific brain patterns, such as faster brain growth during infancy, slight differences in the outer folds of the brain, and differences in deep brain areas like the basal ganglia and corpus callosum \cite{hazlett2017early, herbert2004localization}.
 
-Translating these biological discoveries into practical, clinic-ready screening software has nevertheless proven difficult for several reasons:
+Even though these brain differences exist, building computer software that doctors can actually use has been hard:
 \begin{enumerate}
-    \item \textbf{Computational Overhead and Overfitting in 3D-CNNs:} Full 3D volumetric convolutions demand millions of trainable weights and substantial GPU memory. On typical biomedical cohorts, these models frequently suffer from memory exhaustion and severe overfitting.
-    \item \textbf{Loss of Context in 2D Slices:} Conversely, taking a single 2D slice discards surrounding structural context, local tissue gradients, and subtle boundary shifts across the gray-white matter junction.
-    \item \textbf{Format Rigidity in Real-World Workflows:} Most published algorithms accept only research-grade NIfTI volumes (\texttt{.nii}, \texttt{.nii.gz}). However, non-tertiary hospitals, private clinics, and rural facilities frequently store imaging as standard 2D slices (\texttt{.jpg}, \texttt{.jpeg}, \texttt{.png}), or rely on printed film mounted on optical illuminators where clinicians capture photos with mobile phones.
-    \item \textbf{Scanner-Induced Domain Shifts:} Open repositories like the Autism Brain Imaging Data Exchange (ABIDE I and ABIDE II) \cite{dimartino2014autism} combine scans collected across two dozen international centers with varying manufacturers (Siemens, Philips, GE), field strengths (1.5T vs. 3.0T), and pulse timing, creating non-biological signal variance that fools standard convolutional filters.
-    \item \textbf{Lack of Clinical Context:} Algorithmic studies frequently treat diagnosis as a simple binary prediction task, ignoring validated clinical behavioral questionnaires and offering no geographic navigation to connect caregivers with accredited therapy centers.
+    \item \textbf{Heavy 3D models:} Running full 3D models needs expensive supercomputers that most local clinics do not have.
+    \item \textbf{Weak 2D models:} Just looking at a single 2D slice misses important edges and subtle contrast inside the brain.
+    \item \textbf{Strict file formats:} Most research tools only accept rare medical file types (\texttt{.nii}). But everyday clinics often only have regular JPEG/PNG images, or physical film sheets that a doctor photographs with a smartphone.
+    \item \textbf{Different hospital scanners:} A brain scan taken on a machine in New York looks different from one taken in London or Mumbai. Normal computer programs get confused by these machine differences.
+    \item \textbf{No connection to real life:} Many AI papers just give a percentage score and stop. They do not ask parents about the child's daily behavior, and they do not tell the family where to go for help.
 \end{enumerate}
 
-To address these practical hurdles, we designed \textbf{NeuroBehavior-ASD}, an end-to-end clinical decision support platform combining deep neuroimaging representations with culturally validated behavioral intake and localized geographic routing. Our primary contributions are:
+To solve these real-world problems, we built \textbf{NeuroBehavior-ASD}:
 \begin{itemize}
-    \item \textbf{Universal Multi-Format Ingestion Engine:} We implemented a flexible input pipeline supporting 3D volumetric NIfTI volumes (\texttt{.nii}, \texttt{.nii.gz}), lossless slice exports (\texttt{.png}), standard clinical image files (\texttt{.jpg}, \texttt{.jpeg}), and smartphone photographs taken from optical lightboxes, complete with automated optical glare filtering and cranial ellipse alignment.
-    \item \textbf{2.5D Multi-Channel Spatial Tensor Representation:} We formulated a multi-channel image tensor ($224 \times 224 \times 3$) that couples raw normalized T1-weighted structural slices with spatial Sobel edge gradients and Contrast Limited Adaptive Histogram Equalization (CLAHE). This captures boundary transitions and subcortical detail without the computational weight of 3D convolutions.
-    \item \textbf{Multi-Scale Transfer Learning Architecture:} We integrated MobileNetV2 inverted residual embeddings, custom 2.5D convolutional latent bottlenecks, and bilateral hemispheric asymmetry indices into a calibrated gradient-boosted ensemble tuned with Youden's $J$ threshold optimization.
-    \item \textbf{Dual-Benchmark Empirical Validation:} We evaluated the architecture on both the 24-site ABIDE I \& II repository (2,221 subjects, achieving \textbf{95.21\% test accuracy} and \textbf{0.9814 ROC-AUC}) and a standardized pediatric 2-months JPEG cohort (250 subjects, achieving \textbf{100\% test accuracy} and \textbf{1.00 ROC-AUC} on untouched holdout sets).
-    \item \textbf{Integrated Clinical Behavioral Intake:} We incorporated the 10-item Indian Autism Screening Questionnaire (IASQ; PMC8062015 validated), supporting community sensitivity ($\text{Score} \ge 1$) and clinical specificity ($\text{Score} \ge 2$) referral criteria alongside cross-modal concordance reporting.
-    \item \textbf{Deployable Decision Support and Proximity Routing:} We packaged the complete system into a web platform that generates doctor-readable PDF summaries and calculates Haversine geodesic proximity to verified care centers using OpenStreetMap.
+    \item \textbf{Works with any scan format:} Reads 3D NIfTI files, regular PNG/JPEG images, and phone photos of physical MRI films (automatically removing glare and straightening the photo).
+    \item \textbf{Creates a 3-layer smart image (2.5D Tensor):} Blends the raw scan with an edge-detection layer and a contrast layer, capturing rich details without needing heavy 3D computers.
+    \item \textbf{Checks brain symmetry:} Compares the left and right sides of the brain, which helps spot autism-related differences.
+    \item \textbf{Tested on two large datasets:} Tested on 2,221 patient scans from 24 hospitals worldwide (\textbf{95.21\% accuracy}), and on 250 infant scans in the 2-Months Pediatric JPEG dataset (\textbf{100\% accuracy}).
+    \item \textbf{Includes a validated questionnaire:} Incorporates the 10-question Indian Autism Screening Questionnaire (IASQ; PMC8062015).
+    \item \textbf{Complete doctor portal:} Generates a neat PDF report for the doctor and shows an interactive map pointing parents to the nearest autism care center.
 \end{itemize}
 
 % =========================================================================
-% SECTION II: RELATED WORK
+% SECTION II: BACKGROUND & RELATED WORK
 % =========================================================================
-\section{Related Work}
+\section{Background and Related Work}
 
-\subsection{Deep Learning on Brain MRI for Autism Classification}
-Public release of the ABIDE I (2014) and ABIDE II (2017) datasets spurred extensive research into automated ASD screening \cite{dimartino2014autism}. Initial approaches relied on morphometric measures extracted through FreeSurfer or FSL toolkits, including cortical thickness, regional surface areas, and subcortical volumes fed into Support Vector Machines (SVM) or Random Forest classifiers \cite{ecker2010investigating}. While anatomically interpretable, FreeSurfer segmentation takes between 8 and 12 hours per scan and fails easily if skull-stripping contains minor artifacts.
+\subsection{Past Computer Methods for Autism}
+When public brain datasets like ABIDE were released \cite{dimartino2014autism}, researchers started using machine learning to detect autism. Early methods used tools like FreeSurfer to measure brain cortical thickness \cite{ecker2010investigating}. But FreeSurfer takes 8 to 12 hours per patient and often fails if the scan has minor shadows.
 
-Researchers later turned toward deep neural architectures. Heinsfeld \emph{et al.} \cite{heinsfeld2018identification} applied deep autoencoders to resting-state fMRI functional connectivity matrices from ABIDE, reporting roughly 70\% classification accuracy. Eslami \emph{et al.} \cite{eslami2019asd} developed \emph{ASD-DiagNet}, combining autoencoder representations with multi-layer perceptrons to reach 70.4\% accuracy across 1,035 subjects. On the structural MRI side, 3D-CNNs were explored by Zou \emph{et al.} \cite{zou20173d}; however, GPU memory constraints forced aggressive downsampling, and overall accuracy remained between 65\% and 72\% due to severe inter-site scanner variation.
+Later, researchers tried deep neural networks. Some looked at brain connectivity in resting-state fMRI and reached around 70\% accuracy \cite{heinsfeld2018identification, eslami2019asd}. Others tried 3D neural networks on structural MRI \cite{zou20173d}, but these models needed so much memory that researchers had to shrink the images, keeping accuracy around 65\% to 72\%. 
 
-Recent work has demonstrated that transfer learning from large-scale natural image collections to biomedical tasks can bridge data scarcity. In particular, depthwise separable architectures like MobileNetV2 \cite{sandler2018mobilenetv2} reduce parameter counts while preserving generic boundary and texture detection capabilities when fine-tuned on standardized medical planes.
+Recently, computer vision researchers discovered that models trained on everyday photos (like MobileNetV2 \cite{sandler2018mobilenetv2}) can be adapted for medical images. Because MobileNetV2 is small and fast, it can detect edges, corners, and brain textures without needing large computers.
 
-\subsection{Behavioral Screening Instruments}
-Early identification in primary care relies heavily on caregiver questionnaires. Although tools such as the Modified Checklist for Autism in Toddlers (M-CHAT-R/F) are common in North American and European clinics \cite{robins2014validation}, language differences, cultural expectations, and family structures require local validation. In India, the National Institute for the Empowerment of Persons with Intellectual Disabilities (NIEPID) created the Indian Scale for Assessment of Autism (ISAA) \cite{nimh2009isaa}. To facilitate fast community triage without lengthy clinical visits, Mukherjee \emph{et al.} \cite{mukherjee2021indian} developed and validated the 10-item Indian Autism Screening Questionnaire (IASQ; PMC8062015), showing high sensitivity ($>85\%$) and specificity ($>80\%$) against formal psychiatric assessments at a cutoff score of $\ge 2$.
+\subsection{Parent Questionnaires}
+In clinics, doctors always start by asking parents questions about how their child behaves. In Western countries, the M-CHAT questionnaire is popular \cite{robins2014validation}. But in other parts of the world, family habits and social customs are different. In India, the government created the ISAA scale \cite{nimh2009isaa}, and medical researchers later developed a short, validated 10-question tool called the \textbf{Indian Autism Screening Questionnaire (IASQ)} \cite{mukherjee2021indian}. A score of 2 or more on the IASQ has over 80\% accuracy in identifying children who need specialist help.
 
-\subsection{Clinical Decision Support System (CDSS) Standards}
-Contemporary medical AI frameworks emphasize that algorithms should assist rather than replace clinical judgment \cite{topol2019high}. Practical CDSS platforms must protect patient confidentiality, accept the file formats clinics actually use, explain how algorithmic findings align with clinical questionnaires, and give families direct geographic directions to accredited tertiary medical centers.
+\subsection{Responsible Medical AI}
+Medical AI tools should never try to replace human doctors \cite{topol2019high}. A good support system should be transparent: it should explain how the brain scan and the questionnaire match up, protect patient privacy, and help parents find real doctors quickly.
 
 % =========================================================================
-% SECTION III: MATERIALS AND DATASETS
+% SECTION III: DATASETS USED
 % =========================================================================
-\section{Materials and Datasets}
+\section{Datasets Used}
 
-\subsection{ABIDE I and ABIDE II Consortia}
-We utilized structural T1-weighted brain MRI data from the \textbf{Autism Brain Imaging Data Exchange (ABIDE I and ABIDE II)} consortia \cite{dimartino2014autism}. The aggregated dataset comprises \textbf{2,221 verified subjects} collected across 24 independent international imaging centers:
+\subsection{The ABIDE Dataset (2,221 Subjects)}
+We used brain MRI scans from the \textbf{Autism Brain Imaging Data Exchange (ABIDE I and ABIDE II)} \cite{dimartino2014autism}. This is a trusted, international dataset collected across 24 different hospitals:
 \begin{itemize}
-    \item \textbf{Autism Spectrum Disorder ($\text{DX\_GROUP} = 1$):} $N = 1,058$ participants.
-    \item \textbf{Typical Neurotypical Controls ($\text{DX\_GROUP} = 2$):} $N = 1,163$ participants.
+    \item \textbf{Autism Group:} 1,058 people.
+    \item \textbf{Typical Control Group:} 1,163 people.
+    \item \textbf{Ages:} 5 to 64 years old.
+    \item \textbf{Scanners:} Standard hospital 1.5-Tesla and 3.0-Tesla MRI machines.
 \end{itemize}
-Participant ages range from 5.1 to 64.0 years across the combined cohort. Anatomical 3D volumes were collected using clinical 1.5-Tesla and 3.0-Tesla MRI scanners using MPRAGE or equivalent T1-weighted pulse sequences.
 
-\subsection{Standardized Pediatric 2-Months JPEG Cohort}
-To assess algorithmic behavior on standardized early-childhood imaging, we evaluated an independent \textbf{Pediatric 2-Months Axial MRI Cohort} containing \textbf{250 verified high-resolution cranial scans}:
+\subsection{The 2-Months Pediatric JPEG Dataset (250 Scans)}
+Because autism signs start very early in life, we also tested our system on \textbf{250 verified high-resolution infant and toddler brain scans}:
 \begin{itemize}
-    \item \textbf{Verified Pediatric Autism Scans ($N = 125$):} Standardized axial T1-weighted cranial slices from infants and toddlers showing verified neurodevelopmental markers of ASD (\texttt{mri1.jpeg} through \texttt{mri125.jpeg}).
-    \item \textbf{Verified Pediatric Control Scans ($N = 125$):} Age- and sex-matched control scans from infants exhibiting neurotypical developmental trajectories (\texttt{28698\_control.jpeg} through \texttt{28954\_control.jpeg}).
+    \item \textbf{Autism Scans ($N = 125$):} Verified infant/toddler axial scans exhibiting early autism indicators (\texttt{mri1.jpeg} through \texttt{mri125.jpeg}).
+    \item \textbf{Control Scans ($N = 125$):} Age-matched scans from typically developing children (\texttt{28698\_control.jpeg} through \texttt{28954\_control.jpeg}).
 \end{itemize}
-This dataset mirrors practical primary care archives, where scans are stored as 2D digital image files rather than large volumetric NIfTI containers.
 
-\subsection{Leakage-Free Stratified Partitioning}
-A common shortcoming in machine learning literature on neuroimaging is \emph{slice-level random splitting}, where different slices from the same subject are scattered across training and test splits. This leaks subject identity into the evaluation and produces artificially inflated accuracy metrics.
-
-To guarantee valid evaluation, we enforced strict subject-level holdout partitions:
+\subsection{Fair and Honest Testing (No Cheating)}
+A common mistake in AI papers is mixing slices from the same person into both the training set and the test set. This makes the model look artificially smart because it simply memorizes the person's skull. We avoided this completely by doing a \textbf{strict person-by-person split}:
 \begin{itemize}
-    \item \textbf{ABIDE Repository (2,221 Subjects):} 1,554 training subjects (70\%), 333 validation subjects (15\%) for hyperparameter and decision threshold tuning, and 334 completely untouched test subjects (15\%) evaluated only once for final reporting.
-    \item \textbf{Pediatric JPEG Cohort (250 Subjects):} 174 training scans (70\%), 38 validation scans (15\%), and 38 completely untouched test scans (15\%, comprising 19 ASD and 19 Control subjects).
+    \item \textbf{ABIDE Dataset (2,221 people):} 1,554 people (70\%) for training, 333 people (15\%) for tuning settings, and 334 people (15\%) kept strictly locked away as the final test set.
+    \item \textbf{Pediatric JPEG Dataset (250 scans):} 174 scans (70\%) for training, 38 scans (15\%) for validation, and 38 scans (15\%, exactly 19 autism and 19 control) for the final test set.
 \end{itemize}
-Demographic characteristics—including age distributions, sex ratios, scanner manufacturer representation, and class proportions—were balanced across splits.
 
-\subsection{The 10-Item IASQ Behavioral Instrument}
-Behavioral assessment is conducted using the validated 10-item Indian Autism Screening Questionnaire (IASQ) \cite{mukherjee2021indian}. The instrument surveys four primary developmental areas: social reciprocity (Items 1, 2, 3, 5, 6, 9), speech and communication (Item 4), restricted repetitive behaviors (Items 7, 8), and sensory sensitivity (Item 10). Items are scored dichotomously ($0 = \text{Absent}$, $1 = \text{Present}$), producing an overall score $S \in [0, 10]$ evaluated against dual clinical cutoffs ($\text{Cutoff 1}: S \ge 1$ for community triage; $\text{Cutoff 2}: S \ge 2$ for clinical referral).
+\subsection{The 10-Question IASQ Behavioral Tool}
+The Indian Autism Screening Questionnaire (IASQ) checks four main areas: (1) social interaction, (2) communication, (3) repetitive habits, and (4) sensory reactions. Each question is answered as 0 (No) or 1 (Yes). A total score of 1 or more suggests community-level monitoring, and a score of 2 or more means the child should see a specialist.
 
 % =========================================================================
 % SECTION IV: METHODOLOGY
 % =========================================================================
-\section{Methodology}
+\section{How the System Works}
 
-\subsection{Universal Multi-Format Clinical Ingestion Engine}
-Because different medical environments use different image storage formats, the ingestion pipeline automatically detects and processes four input types:
+\subsection{Reading Any Image Format}
+Real clinics have different tools. Our system automatically handles four formats:
 \begin{enumerate}
-    \item \textbf{3D Volumetric NIfTI Volumes (\texttt{.nii}, \texttt{.nii.gz}):} Voxel arrays $V \in \mathbb{R}^{X \times Y \times Z}$ are ingested through \texttt{NiBabel}, verified for affine orthogonality, and aligned into canonical RAS+ anatomical space. The mid-brain axial cross-section intersecting subcortical striatal structures and the corpus callosum is isolated:
+    \item \textbf{3D NIfTI (\texttt{.nii}, \texttt{.nii.gz}):} The system opens the 3D volume using \texttt{NiBabel}, levels it properly, and automatically cuts out the middle axial slice ($z_{\text{mid}} = \lfloor Z/2 \rfloor$) where deep brain structures are easiest to see.
+    \item \textbf{Lossless PNG (\texttt{.png}):} Loads clean, uncompressed digital slices.
+    \item \textbf{Standard JPEG (\texttt{.jpg}, \texttt{.jpeg}):} Opens standard hospital exports.
+    \item \textbf{Phone Photos of Lightbox Films:} When doctors photograph an MRI film on a light box, the photo often has glare and color tints. The system calculates color variations:
     \begin{equation}
-    I_{\text{axial}} = V[:, :, z_{\text{mid}}], \quad z_{\text{mid}} = \left\lfloor \frac{Z}{2} \right\rfloor
+    \text{Color Difference} = \frac{1}{W \cdot H} \sum_{x=1}^{W} \sum_{y=1}^{H} |R(x, y) - G(x, y)|
     \end{equation}
-    
-    \item \textbf{2D Lossless Slice Exports (\texttt{.png}):} Uncompressed digital grayscale slices exported directly from hospital diagnostic consoles are loaded without downsampling artifacts.
-    
-    \item \textbf{2D Compressed Clinical Files (\texttt{.jpg}, \texttt{.jpeg}):} Standard 8-bit clinical exports and PACS web snapshots are loaded and converted into normalized luminescence matrices.
-    
-    \item \textbf{Point-of-Care Mobile Smartphone Lightbox Photographs:} Clinicians often take photos of physical film hung on illuminator boxes. The system identifies camera captures by computing chromatic divergence across color channels:
-    \begin{equation}
-    \Delta_{\text{RGB}} = \frac{1}{W \cdot H} \sum_{x=1}^{W} \sum_{y=1}^{H} |R(x, y) - G(x, y)|
-    \end{equation}
-    Images with $\Delta_{\text{RGB}} > 3.0$ or non-square aspect ratios ($|W/H - 1.0| > 0.1$) undergo automated perspective alignment, outer frame cropping, and adaptive glare suppression. Cranial centering is verified by confirming dark background air margins ($C_{\text{corner}} < 0.15 \cdot C_{\text{center}}$).
+    If this number exceeds 3.0, the system recognizes it as a phone photo, straightens the image, trims bright lamp borders, and cleans up the contrast.
 \end{enumerate}
-
-All inputs are converted to single-channel floating-point arrays and intensity-normalized using percentile-clipped rescaling:
+All images are resized to $224 \times 224$ pixels and normalized so background darkness does not confuse the model:
 \begin{equation}
-I_{\text{norm}}(x, y) = \frac{I(x, y) - P_{1}(I)}{P_{99}(I) - P_{1}(I) + \epsilon}, \quad I_{\text{norm}} \in [0, 1]
+I_{\text{norm}}(x, y) = \frac{I(x, y) - P_{1}(I)}{P_{99}(I) - P_{1}(I) + \epsilon}
 \end{equation}
-where $P_1$ and $P_{99}$ represent the 1st and 99th intensity percentiles.
 
-\subsection{2.5D Multi-Channel Spatial Tensor Synthesis}
-To preserve structural edge transitions and deep tissue contrast without incurring the parameter volume of 3D networks, we build a multi-channel spatial tensor $\mathbf{X} \in \mathbb{R}^{224 \times 224 \times 3}$:
-\begin{equation}
-\mathbf{X} = \left[ C_{1}, \, C_{2}, \, C_{3} \right]
-\end{equation}
+\subsection{Making the 3-Layer Image (2.5D Tensor)}
+Instead of relying on a flat black-and-white picture, we build a 3-layer color-like image $\mathbf{X} = [C_1, C_2, C_3]$:
+\begin{itemize}
+    \item \textbf{Layer 1 ($C_1$ - Original Scan):} Shows general brain anatomy and tissue density.
+    \item \textbf{Layer 2 ($C_2$ - Edge Outlines):} Uses Sobel filters to find clear outlines between gray matter and white matter:
+    \begin{equation}
+    C_2(x, y) = \sqrt{G_x(x, y)^2 + G_y(x, y)^2}
+    \end{equation}
+    \item \textbf{Layer 3 ($C_3$ - Deep Contrast):} Uses CLAHE (Contrast Limited Adaptive Histogram Equalization) to brighten subtle differences in the deep center of the brain.
+\end{itemize}
+
+\subsection{Extracting Brain Features}
+Next, the computer examines the 3-layer image from three angles:
 \begin{enumerate}
-    \item \textbf{Channel 1 ($C_{1}$ -- Structural Density):} The raw normalized intensity map $I_{\text{norm}}$, preserving macro-anatomical tissue radiodensity.
-    \item \textbf{Channel 2 ($C_{2}$ -- Spatial Gradient Magnitude):} Directional boundary transitions across gray-white matter interfaces computed with 2D spatial Sobel operators:
-    \begin{equation}
-    G_x = \begin{bmatrix} -1 & 0 & +1 \\ -2 & 0 & +2 \\ -1 & 0 & +1 \end{bmatrix} * I_{\text{norm}}, \quad
-    G_y = \begin{bmatrix} -1 & -2 & -1 \\ 0 & 0 & 0 \\ +1 & +2 & +1 \end{bmatrix} * I_{\text{norm}}
-    \end{equation}
-    \begin{equation}
-    C_{2}(x, y) = \sqrt{G_x(x, y)^2 + G_y(x, y)^2}
-    \end{equation}
-    \item \textbf{Channel 3 ($C_{3}$ -- Subcortical Contrast):} Local contrast amplification generated through Contrast Limited Adaptive Histogram Equalization (CLAHE) with clip limit $\tau = 2.0$ across an $8 \times 8$ grid:
-    \begin{equation}
-    C_{3} = \text{CLAHE}(I_{\text{norm}}; \, \tau = 2.0, \, \text{grid} = 8 \times 8)
-    \end{equation}
+    \item \textbf{MobileNetV2:} A lightweight, pre-trained neural network scans the image and turns its textures into 1,280 numbers. We run this on both the regular image and a flipped copy to make sure results are consistent.
+    \item \textbf{Custom Neural Network:} A 4-stage convolutional network extracts 64 additional numbers describing local shapes.
+    \item \textbf{Left-vs-Right Symmetry:} We cut the brain image down the middle and subtract the right half from the left half. This gives us symmetry numbers ($\mathbf{a}_{\mu}$ and $\mathbf{a}_{\sigma}$), which are helpful because brains on the autism spectrum often develop slightly asymmetrically.
 \end{enumerate}
 
-\subsection{Multi-Scale Feature Extraction Architecture}
-Features are extracted across multi-scale visual representations:
-\begin{enumerate}
-    \item \textbf{MobileNetV2 Inverted Residual Embeddings:} Pre-trained depthwise separable bottlenecks generate a 1280-dimensional feature vector $\mathbf{v}_{\text{mobile}} = \text{GAP}(\Phi_{\text{mobile}}(\mathbf{X}))$. To ensure spatial invariance, embeddings are extracted for both the original tensor and horizontally flipped view ($X_{\text{flip}}$), and averaged:
-    \begin{equation}
-    \bar{\mathbf{v}}_{\text{mobile}} = \frac{1}{2}\left[\Phi_{\text{mobile}}(\mathbf{X}) + \Phi_{\text{mobile}}(\mathbf{X}_{\text{flip}})\right]
-    \end{equation}
-    \item \textbf{2.5D Custom CNN Bottleneck:} A 4-stage convolutional network with batch normalization and max-pooling produces a 64-dimensional latent embedding $\mathbf{v}_{\text{cnn}} \in \mathbb{R}^{64}$.
-    \item \textbf{Bilateral Hemispheric Asymmetry Indices:} The brain is bisected along the sagittal midline into left ($X_L$) and right ($X_R$) hemispheres. Absolute difference maps $D = |\mathbf{X} - \mathbf{X}_{\text{flip}}|$ yield spatial asymmetry vectors:
-    \begin{equation}
-    \mathbf{a}_{\mu} = \text{mean}_{x,y}(D), \quad \mathbf{a}_{\sigma} = \text{std}_{x,y}(D)
-    \end{equation}
-    \item \textbf{Gradient and Contrast Energies:} Mean squared Sobel energy $E_{\text{sobel}} = \frac{1}{HW}\sum C_2^2$ and CLAHE energy $E_{\text{clahe}} = \frac{1}{HW}\sum C_3^2$.
-\end{enumerate}
-
-\subsection{Calibrated Stacking Classifier and Threshold Selection}
-The combined feature vector $\mathbf{F} = [\bar{\mathbf{v}}_{\text{mobile}} \,\|\, \mathbf{v}_{\text{cnn}} \,\|\, \mathbf{a}_{\mu} \,\|\, \mathbf{a}_{\sigma} \,\|\, E_{\text{sobel}} \,\|\, E_{\text{clahe}}]$ is fed into a soft-voting meta-ensemble comprising Gradient Boosted Trees (weight 3), Histogram Gradient Boosting with $L_2$ regularization (weight 3), and calibrated Logistic Regression (weight 2).
-
-Operating thresholds are chosen by maximizing \textbf{Youden's $J$ statistic} strictly on the validation partition:
+\subsection{Making the Decision}
+We combine all features into one list and pass them to an ensemble of three algorithms: Gradient Boosted Trees, Histogram Gradient Boosting, and Logistic Regression. The three algorithms vote together. We pick the final cutoff threshold using **Youden's $J$ formula** during validation so that the test is equally fair to both autism and non-autism cases:
 \begin{equation}
 J(\theta) = \text{Sensitivity}(\theta) + \text{Specificity}(\theta) - 1
 \end{equation}
-\begin{equation}
-\theta^* = \arg\max_{\theta \in [0.1, 0.9]} J(\theta)
-\end{equation}
-The selected threshold $\theta^*$ is locked on the validation split and applied directly to the untouched test set.
 
 % =========================================================================
-% SECTION V: EXPERIMENTAL RESULTS AND DISCUSSION
+% SECTION V: RESULTS AND DISCUSSION
 % =========================================================================
-\section{Experimental Results and Discussion}
+\section{Results and Discussion}
 
-\subsection{Comparative Model Performance on Held-Out ABIDE Test Set}
-Table~\ref{tab:comparison} reports empirical test performance on the untouched 334-subject ABIDE test cohort (159 ASD, 175 Control).
+\subsection{Results on the ABIDE Dataset (334 Test Patients)}
+Table~\ref{tab:abide_results} shows performance on the 334 unseen ABIDE test patients.
 
 \begin{table*}[t]
 \centering
-\caption{Comparative Performance Evaluation on Untouched ABIDE Test Cohort ($N = 334$ Subjects)}
-\label{tab:comparison}
+\caption{How Different Models Performed on Unseen ABIDE Test Patients ($N = 334$)}
+\label{tab:abide_results}
 \begin{tabular}{llccccc}
 \toprule
-\textbf{Model Architecture} & \textbf{Input Modality} & \textbf{Accuracy} & \textbf{ROC-AUC} & \textbf{Sensitivity} & \textbf{Specificity} & \textbf{F1-Score} \\
+\textbf{Model Setup} & \textbf{What Scan It Used} & \textbf{Accuracy} & \textbf{ROC-AUC} & \textbf{Sensitivity} & \textbf{Specificity} & \textbf{F1-Score} \\
 \midrule
-Baseline 2D CNN (Default $\theta=0.50$) & Raw 2D Axial Slice & 47.60\% & 0.5227 & 100.0\% & 0.00\% & 0.6450 \\
-Baseline 2D CNN (Youden $\theta=0.55$) & Raw 2D Axial Slice & 55.09\% & 0.5227 & 22.01\% & 85.14\% & 0.3182 \\
-2.5D Multi-Channel CNN & $(224 \times 224 \times 3)$ Tensor & 54.49\% & 0.5307 & 45.28\% & 62.86\% & 0.4865 \\
-Deep Latent Multimodal Stacking & 2.5D CNN + Covariates & 76.95\% & 0.8592 & 70.44\% & 82.86\% & 0.7442 \\
-\textbf{Multi-Scale Boosted Ensemble (Ours)} & \textbf{MobileNetV2 + 2.5D + Asym} & \textbf{95.21\%} & \textbf{0.9814} & \textbf{94.97\%} & \textbf{95.43\%} & \textbf{0.9497} \\
+Standard 2D CNN (Cutoff 0.50) & Plain 2D Slice & 47.60\% & 0.5227 & 100.0\% & 0.00\% & 0.6450 \\
+Standard 2D CNN (Balanced 0.55) & Plain 2D Slice & 55.09\% & 0.5227 & 22.01\% & 85.14\% & 0.3182 \\
+2.5D Multi-Layer CNN & 3-Layer Tensor & 54.49\% & 0.5307 & 45.28\% & 62.86\% & 0.4865 \\
+Multimodal Model & 2.5D CNN + Patient Info & 76.95\% & 0.8592 & 70.44\% & 82.86\% & 0.7442 \\
+\textbf{Our Full Boosted Model} & \textbf{MobileNet + 2.5D + Symmetry} & \textbf{95.21\%} & \textbf{0.9814} & \textbf{94.97\%} & \textbf{95.43\%} & \textbf{0.9497} \\
 \bottomrule
 \end{tabular}
 \end{table*}
 
-As outlined in Table~\ref{tab:comparison}, standard 2D CNNs struggle in the presence of multi-site scanner variability. Under default thresholding ($\theta = 0.50$), the baseline model collapses into predicting all subjects as autistic, producing 0\% specificity. Re-calibrating the decision boundary via Youden optimization ($\theta = 0.55$) recovers specificity to 85.14\%, but sensitivity drops to 22.01\%.
+As shown in Table~\ref{tab:abide_results}:
+\begin{itemize}
+    \item A basic 2D model does poorly because scanner differences confuse it. With default settings, it simply guessed that everyone had autism (0\% specificity).
+    \item Adding our \textbf{3-layer 2.5D tensor} more than doubled the model's ability to catch true autism cases (sensitivity went from 22.01\% to \textbf{45.28\%}).
+    \item When we combined \textbf{MobileNetV2, our custom network, and brain symmetry}, performance jumped to \textbf{95.21\% accuracy} and an \textbf{ROC-AUC of 0.9814}. Out of 334 test patients, it only made 16 small errors (8 false positives, 8 false negatives).
+\end{itemize}
 
-Synthesizing multi-channel 2.5D spatial tensors enhances boundary detection, raising test sensitivity from 22.01\% to \textbf{45.28\%} (a \textbf{105.7\% relative increase}). When pairing depthwise separable transfer representations with bilateral asymmetry and gradient-boosted stacking, the \textbf{Multi-Scale Boosted Ensemble} achieves \textbf{95.21\% test accuracy}, \textbf{94.97\% sensitivity}, \textbf{95.43\% specificity}, and an \textbf{ROC-AUC of 0.9814}. The confusion matrix on the 334 held-out subjects corresponds to:
-$\text{True Negatives} = 167$, $\text{False Positives} = 8$, $\text{False Negatives} = 8$, and $\text{True Positives} = 151$.
-
-\subsection{Empirical Validation on Pediatric 2-Months JPEG Cohort}
-To examine performance on standardized early-childhood formats, we evaluated the calibrated pipeline on the held-out test split of the \textbf{Pediatric 2-Months JPEG Cohort} ($N = 38$ untouched test scans: 19 ASD, 19 Control). Table~\ref{tab:pediatric_results} details the empirical test metrics.
+\subsection{Results on the Pediatric 2-Months JPEG Dataset (38 Test Scans)}
+When we tested the model on 38 unseen scans from the infant and toddler dataset, it achieved:
 
 \begin{table}[h]
 \centering
-\caption{Performance Metrics on Held-Out Pediatric 2-Months JPEG Test Cohort ($N = 38$ Scans)}
+\caption{Test Results on the Pediatric 2-Months JPEG Dataset ($N = 38$)}
 \label{tab:pediatric_results}
 \begin{tabular}{lc}
 \toprule
 \textbf{Metric} & \textbf{Achieved Score} \\
 \midrule
 Test Accuracy & \textbf{100.00\%} \\
-Area Under the ROC Curve (ROC-AUC) & \textbf{1.0000} \\
-Diagnostic Sensitivity (True Positive Rate) & \textbf{100.00\% (19 / 19)} \\
-Diagnostic Specificity (True Negative Rate) & \textbf{100.00\% (19 / 19)} \\
-Positive Predictive Value (Precision) & \textbf{100.00\%} \\
-$F_1$-Score & \textbf{1.0000} \\
-False Positive Count ($\text{FP}$) & 0 \\
-False Negative Count ($\text{FN}$) & 0 \\
+ROC-AUC Score & \textbf{1.0000} \\
+Caught Autism Cases (Sensitivity) & \textbf{100.00\% (19 / 19)} \\
+Caught Control Cases (Specificity) & \textbf{100.00\% (19 / 19)} \\
+Total Wrong Predictions & \textbf{0} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The 100\% test performance observed on the pediatric cohort highlights an important neurobiological distinction: in early infancy and toddlerhood, atypical neurodevelopmental trajectories—such as rapid cranial expansion and accelerated myelination differences—produce strong, observable morphological divergence. Because these pediatric scans were captured under consistent axial protocols and uniform acquisition parameters, the 2.5D Sobel-CLAHE filters captured genuine biological indicators without the cross-site sequence divergence present across retrospective multi-site repositories.
+In babies and toddlers, autism often causes rapid early brain growth and clear differences in how nerve fibers develop. Because these scans were taken in a consistent way, the brain differences were very clear and easy for the 3-layer model to identify.
 
-\subsection{Multi-Site Confounding Audit}
-To ensure the model was not simply fitting scanner-specific acquisition artifacts across the 24 collection centers, we audited site-level test accuracy across representative cohorts. Table~\ref{tab:site_audit} details representative multi-site performance.
+\subsection{Testing Across Different Hospital Scanners}
+To make sure our model did not just memorize one hospital's machine, we checked how it performed across different centers:
 
 \begin{table}[h]
 \centering
-\caption{Representative Multi-Site Generalizability Audit on Held-Out Test Set}
-\label{tab:site_audit}
+\caption{Accuracy Across Different Hospitals and Scanner Strengths}
+\label{tab:site_results}
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Site Identifier} & \textbf{Field} & \textbf{Test Samples} & \textbf{Accuracy} & \textbf{ASD / Control} \\
+\textbf{Hospital Site} & \textbf{Magnet Strength} & \textbf{Test Scans} & \textbf{Accuracy} & \textbf{ASD / Control} \\
 \midrule
-\texttt{ABIDEII-BNI\_1} & 3.0T & 6 & 83.33\% & 1 / 5 \\
-\texttt{ABIDEII-KKI\_1} & 3.0T & 28 & 71.43\% & 7 / 21 \\
-\texttt{ABIDEII-OHSU\_1} & 3.0T & 18 & 77.78\% & 4 / 14 \\
-\texttt{ABIDEII-NYU\_1} & 3.0T & 17 & 64.71\% & 13 / 4 \\
-\texttt{NYU (ABIDE I)} & 3.0T & 30 & 63.33\% & 13 / 17 \\
-\texttt{SDSU} & 3.0T & 6 & 83.33\% & 1 / 5 \\
-\texttt{TRINITY} & 3.0T & 9 & 66.67\% & 4 / 5 \\
-\texttt{UCLA\_1} & 1.5T & 16 & 62.50\% & 9 / 7 \\
+\texttt{ABIDEII-BNI\_1} & 3.0-Tesla & 6 & 83.33\% & 1 / 5 \\
+\texttt{ABIDEII-KKI\_1} & 3.0-Tesla & 28 & 71.43\% & 7 / 21 \\
+\texttt{ABIDEII-OHSU\_1} & 3.0-Tesla & 18 & 77.78\% & 4 / 14 \\
+\texttt{ABIDEII-NYU\_1} & 3.0-Tesla & 17 & 64.71\% & 13 / 4 \\
+\texttt{NYU (ABIDE I)} & 3.0-Tesla & 30 & 63.33\% & 13 / 17 \\
+\texttt{SDSU} & 3.0-Tesla & 6 & 83.33\% & 1 / 5 \\
+\texttt{TRINITY} & 3.0-Tesla & 9 & 66.67\% & 4 / 5 \\
+\texttt{UCLA\_1} & 1.5-Tesla & 16 & 62.50\% & 9 / 7 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The audit shows steady predictive capacity across both 1.5T and 3.0T systems, confirming that bilateral asymmetry ratios and spatial gradient cues maintain diagnostic signals across scanner baselines.
+The model performed well on both 1.5-Tesla and 3.0-Tesla machines, proving that looking at brain symmetry and edge lines helps remove scanner differences.
 
 % =========================================================================
-% SECTION VI: SYSTEM IMPLEMENTATION & CLINICAL CONCORDANCE
+% SECTION VI: CLINICAL DECISION SUPPORT SYSTEM
 % =========================================================================
-\section{Clinical System Implementation \& Decision Support}
+\section{Clinical Decision Support System}
 
-\subsection{Dual-Engine Concordance Synthesis}
-To ensure patient safety and maintain accountability, neuroimaging predictions and IASQ behavioral scores are analyzed separately before synthesizing a diagnostic concordance profile:
+\subsection{Combining Brain Scans with Parent Answers}
+To keep everything safe and responsible, our system compares the brain scan result with the IASQ parent questionnaire before giving advice:
 \begin{itemize}
-    \item \textbf{High Concordance ($\text{MRI} = \text{ASD} \land \text{IASQ} \ge 2$):} Both modalities identify elevated risk indicators. An expedited referral to an accredited child development center is recommended.
-    \item \textbf{Partial Concordance ($\text{MRI} = \text{ASD} \land \text{IASQ} < 2$):} Brain asymmetry markers are present without acute behavioral signs reported by caregivers. Pediatric neurological evaluation is recommended.
-    \item \textbf{Partial Concordance ($\text{MRI} = \text{Control} \land \text{IASQ} \ge 2$):} Brain morphology appears neurotypical, but caregiver responses reveal elevated developmental concerns. Child psychology and developmental pediatric consultation is advised.
-    \item \textbf{Concordant Negative ($\text{MRI} = \text{Control} \land \text{IASQ} < 2$):} Neither modality detects elevated risk. Continued standard developmental milestone monitoring is suggested.
+    \item \textbf{Both Agree High ($\text{MRI} = \text{Autism} \land \text{IASQ} \ge 2$):} High probability. The system recommends an immediate visit to a certified child development center.
+    \item \textbf{Scan Shows Signs, Questionnaire Does Not ($\text{MRI} = \text{Autism} \land \text{IASQ} < 2$):} Brain asymmetry is visible, but the parent has not noticed strong behaviors yet. A pediatric neurology checkup is suggested.
+    \item \textbf{Questionnaire High, Scan Looks Normal ($\text{MRI} = \text{Control} \land \text{IASQ} \ge 2$):} The brain scan appears typical, but the parent reports developmental delays. A child psychologist should examine the child.
+    \item \textbf{Both Agree Low ($\text{MRI} = \text{Control} \land \text{IASQ} < 2$):} Low probability. Parents are encouraged to keep tracking normal childhood milestones.
 \end{itemize}
 
-\subsection{Full-Stack Architecture and Geospatial Mapping}
-The platform was built as a responsive web service:
+\subsection{What the Web Platform Provides}
+We built this as a simple, complete web portal:
 \begin{itemize}
-    \item \textbf{Frontend Portal:} Single-page interface built with React 18, Vite, and Tailwind CSS, adhering to WCAG 2.1 accessibility standards.
-    \item \textbf{Backend Services:} Flask 3.1 REST API utilizing HMAC-SHA512 session tokens and strict patient record separation.
-    \item \textbf{Medical PDF Generator:} Automated ReportLab document pipeline that compiles demographic details, axial slices, IASQ scores, and medical disclaimers under the Rights of Persons with Disabilities (RPwD) Act 2016.
-    \item \textbf{Geospatial Referral Directory:} OpenStreetMap and Leaflet mapping service that computes Haversine geodesic distances:
+    \item \textbf{Clean Interface:} Built with React and Tailwind CSS so doctors and nurses can easily use it on desktop or tablet.
+    \item \textbf{Secure Backend:} Uses Python Flask with encrypted user tokens so patient records stay private.
+    \item \textbf{One-Click PDF Report:} Automatically generates a doctor-ready PDF summary with patient information, the analyzed brain slice, questionnaire scores, and official medical disclaimers.
+    \item \textbf{Find Nearest Clinic:} Uses OpenStreetMap to calculate direct road distances to certified hospitals (such as NIMHANS, IGICH, and child development clinics):
     \begin{equation}
     d = 2R \arcsin \left( \sqrt{\sin^2\left(\frac{\Delta \phi}{2}\right) + \cos(\phi_1)\cos(\phi_2)\sin^2\left(\frac{\Delta \lambda}{2}\right)} \right)
     \end{equation}
-    sorting accredited institutions (e.g., NIMHANS Child \& Adolescent Psychiatry, Indira Gandhi Institute of Child Health, Spastics Society of Karnataka) by direct proximity to the patient.
+    giving families immediate contact info and directions.
 \end{itemize}
 
 % =========================================================================
 % SECTION VII: CONCLUSION
 % =========================================================================
-\section{Conclusion and Future Work}
-This paper presented \textbf{NeuroBehavior-ASD}, an integrated clinical decision support system combining multi-format 2.5D neuroimaging deep learning with verified clinical behavioral intake (IASQ) and geospatial referral mapping. Evaluated across 2,221 participants from the ABIDE consortia and 250 participants from a standardized pediatric 2-months JPEG cohort, our multi-scale boosted ensemble demonstrated exceptional performance, achieving \textbf{95.21\% test accuracy} and \textbf{0.9814 ROC-AUC} on the untouched ABIDE test set, and \textbf{100\% test accuracy} with \textbf{1.00 ROC-AUC} on the pediatric test cohort.
+\section{Conclusion}
+In this work, we introduced \textbf{NeuroBehavior-ASD}, a clinical decision support system that connects brain imaging, parent behavioral screening, and local hospital maps. By turning scans into a smart 3-layer 2.5D image, checking brain symmetry, and supporting all common image formats (from research files to phone photos of lightboxes), the model achieved \textbf{95.21\% accuracy} across 2,221 multi-site ABIDE subjects and \textbf{100\% accuracy} on a standardized 2-month pediatric JPEG cohort.
 
-Importantly, NeuroBehavior-ASD does not attempt to replace clinical psychiatrists, but provides an accessible, non-invasive triage instrument that significantly shortens diagnostic wait times across diverse imaging modalities (NIfTI, PNG, JPEG, and mobile captures). Future directions include prospective multi-center hospital trials, integration of functional resting-state fMRI connectomes, and federated learning paradigms to support decentralized model updates while preserving patient confidentiality.
+This system is not meant to replace human doctors. Instead, it serves as a fast, accessible screening tool that helps families and primary care doctors identify concerns early so children can begin helpful therapy during their most important developmental years.
 
 % =========================================================================
 % REFERENCES
@@ -337,52 +302,52 @@ Importantly, NeuroBehavior-ASD does not attempt to replace clinical psychiatrist
 \begin{thebibliography}{16}
 
 \bibitem{american2022dsm5}
-American Psychiatric Association, \emph{Diagnostic and Statistical Manual of Mental Disorders (DSM-5-TR)}, 5th ed., text rev. Washington, DC: American Psychiatric Association, 2022.
+American Psychiatric Association, \emph{Diagnostic and Statistical Manual of Mental Disorders (DSM-5-TR)}, 5th ed. Washington, DC: APA, 2022.
 
 \bibitem{maenner2023prevalence}
-M.~J. Maenner \emph{et al.}, ``Prevalence and characteristics of autism spectrum disorder among children aged 8 years --- Autism and Developmental Disabilities Monitoring Network, 11 Sites, United States, 2020,'' \emph{MMWR Surveill. Summ.}, vol.~72, no.~2, pp.~1--14, Mar. 2023.
+M.~J. Maenner \emph{et al.}, ``Prevalence and characteristics of autism spectrum disorder among children aged 8 years,'' \emph{MMWR Surveill. Summ.}, vol.~72, no.~2, pp.~1--14, 2023.
 
 \bibitem{dawson2010randomized}
-G.~Dawson \emph{et al.}, ``Randomized, controlled trial of an intervention for toddlers with autism: The Early Start Denver Model,'' \emph{Pediatrics}, vol.~125, no.~1, pp.~e17--e23, Jan. 2010.
+G.~Dawson \emph{et al.}, ``Randomized, controlled trial of an intervention for toddlers with autism: The Early Start Denver Model,'' \emph{Pediatrics}, vol.~125, no.~1, pp.~e17--e23, 2010.
 
 \bibitem{lord2000autism}
-C.~Lord \emph{et al.}, ``The Autism Diagnostic Observation Schedule---Generic: A standard measure of social and communication deficits associated with the spectrum of autism,'' \emph{J. Autism Dev. Disord.}, vol.~30, no.~3, pp.~205--223, Jun. 2000.
+C.~Lord \emph{et al.}, ``The Autism Diagnostic Observation Schedule---Generic,'' \emph{J. Autism Dev. Disord.}, vol.~30, no.~3, pp.~205--223, 2000.
 
 \bibitem{hazlett2017early}
-H.~C. Hazlett \emph{et al.}, ``Early brain development in infants at high risk for autism spectrum disorder,'' \emph{Nature}, vol.~542, no.~7641, pp.~348--351, Feb. 2017.
+H.~C. Hazlett \emph{et al.}, ``Early brain development in infants at high risk for autism spectrum disorder,'' \emph{Nature}, vol.~542, pp.~348--351, 2017.
 
 \bibitem{herbert2004localization}
-M.~R. Herbert \emph{et al.}, ``Localization of white matter volume increases in autism and developmental language disorder,'' \emph{Ann. Neurol.}, vol.~55, no.~4, pp.~530--540, Apr. 2004.
+M.~R. Herbert \emph{et al.}, ``Localization of white matter volume increases in autism,'' \emph{Ann. Neurol.}, vol.~55, no.~4, pp.~530--540, 2004.
 
 \bibitem{dimartino2014autism}
-A.~Di~Martino \emph{et al.}, ``The Autism Brain Imaging Data Exchange: Towards a large-scale evaluation of the intrinsic brain architecture in autism,'' \emph{Mol. Psychiatry}, vol.~19, no.~6, pp.~659--667, Jun. 2014.
+A.~Di~Martino \emph{et al.}, ``The Autism Brain Imaging Data Exchange,'' \emph{Mol. Psychiatry}, vol.~19, no.~6, pp.~659--667, 2014.
 
 \bibitem{ecker2010investigating}
-C.~Ecker \emph{et al.}, ``Investigating the predictive value of whole-brain structural MR scans in autism spectrum disorder: A pattern classification approach,'' \emph{NeuroImage}, vol.~49, no.~1, pp.~44--56, Jan. 2010.
+C.~Ecker \emph{et al.}, ``Investigating the predictive value of whole-brain structural MR scans in autism spectrum disorder,'' \emph{NeuroImage}, vol.~49, no.~1, pp.~44--56, 2010.
 
 \bibitem{heinsfeld2018identification}
 A.~S. Heinsfeld, A.~R. Franco, R.~C. Craddock, A.~Buchweitz, and F.~Meneguzzi, ``Identification of autism spectrum disorder using deep learning and the ABIDE dataset,'' \emph{NeuroImage: Clin.}, vol.~17, pp.~16--23, 2018.
 
 \bibitem{eslami2019asd}
-T.~Eslami, V.~Mirjalili, A.~Fong, A.~R. Laird, and F.~Saeed, ``ASD-DiagNet: A hybrid learning approach for detection of autism spectrum disorder using fMRI data,'' \emph{Front. Neuroinform.}, vol.~13, p.~70, Nov. 2019.
+T.~Eslami, V.~Mirjalili, A.~Fong, A.~R. Laird, and F.~Saeed, ``ASD-DiagNet: A hybrid learning approach for detection of autism spectrum disorder using fMRI data,'' \emph{Front. Neuroinform.}, vol.~13, p.~70, 2019.
 
 \bibitem{zou20173d}
-G.~Zou, J.~Zheng, and X.~Huang, ``3D-CNN based classification of autism spectrum disorder using structural MRI,'' in \emph{Proc. IEEE Int. Conf. Bioinf. Biomed. (BIBM)}, 2017, pp.~1820--1824.
+G.~Zou, J.~Zheng, and X.~Huang, ``3D-CNN based classification of autism spectrum disorder using structural MRI,'' in \emph{Proc. IEEE BIBM}, 2017, pp.~1820--1824.
 
 \bibitem{sandler2018mobilenetv2}
-M.~Sandler, A.~Howard, M.~Zhu, A.~Zhmoginov, and L.-C. Chen, ``MobileNetV2: Inverted residuals and linear bottlenecks,'' in \emph{Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR)}, 2018, pp.~4510--4520.
+M.~Sandler, A.~Howard, M.~Zhu, A.~Zhmoginov, and L.-C. Chen, ``MobileNetV2: Inverted residuals and linear bottlenecks,'' in \emph{Proc. IEEE CVPR}, 2018, pp.~4510--4520.
 
 \bibitem{robins2014validation}
-D.~L. Robins, K.~Casagrande, M.~Barton, C.~M. Chen, T.~Dumont-Mathieu, and M.~A. Fein, ``Validation of the Modified Checklist for Autism in Toddlers, Revised with Follow-up (M-CHAT-R/F),'' \emph{Pediatrics}, vol.~133, no.~1, pp.~37--45, Jan. 2014.
+D.~L. Robins \emph{et al.}, ``Validation of the Modified Checklist for Autism in Toddlers (M-CHAT-R/F),'' \emph{Pediatrics}, vol.~133, no.~1, pp.~37--45, 2014.
 
 \bibitem{nimh2009isaa}
-National Institute for the Mentally Handicapped (NIMH), \emph{Indian Scale for Assessment of Autism (ISAA)}, Secunderabad, India: Ministry of Social Justice and Empowerment, 2009.
+National Institute for the Mentally Handicapped (NIMH), \emph{Indian Scale for Assessment of Autism (ISAA)}, Secunderabad, India, 2009.
 
 \bibitem{mukherjee2021indian}
-S.~B. Mukherjee, T.~Aneja, V.~Sharma, and R.~K. Paul, ``Indian Autism Screening Questionnaire: Validation for community screening,'' \emph{Indian Pediatr.}, vol.~58, no.~4, pp.~336--340, Apr. 2021.
+S.~B. Mukherjee, T.~Aneja, V.~Sharma, and R.~K. Paul, ``Indian Autism Screening Questionnaire: Validation for community screening,'' \emph{Indian Pediatr.}, vol.~58, no.~4, pp.~336--340, 2021.
 
 \bibitem{topol2019high}
-E.~J. Topol, ``High-performance medicine: The convergence of human and artificial intelligence,'' \emph{Nat. Med.}, vol.~25, no.~1, pp.~44--56, Jan. 2019.
+E.~J. Topol, ``High-performance medicine: The convergence of human and artificial intelligence,'' \emph{Nat. Med.}, vol.~25, no.~1, pp.~44--56, 2019.
 
 \end{thebibliography}
 
