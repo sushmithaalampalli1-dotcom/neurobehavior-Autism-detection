@@ -1,0 +1,13 @@
+.git
+.gitignore
+.pytest_cache
+tests
+frontend/node_modules
+frontend/dist
+**/__pycache__
+*.pyc
+*.pyo
+*.pyd
+.env
+uploads/mri/*
+reports/generated/*

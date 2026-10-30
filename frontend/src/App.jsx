@@ -128,11 +128,28 @@ export default function App() {
   }, []);
 
   const handleLoginSuccess = (loggedInUser) => {
+    // Ensure clean state for new user: never carry over previous user assessments
+    setActiveMriResult(null);
+    setActiveQuestionnaireResult(null);
+    try {
+      sessionStorage.removeItem('neurobehavior_active_mri');
+      sessionStorage.removeItem('neurobehavior_active_questionnaire');
+    } catch (e) {
+      console.warn(e);
+    }
     setUser(loggedInUser);
     navigate('mri');
   };
 
   const handleLogout = async () => {
+    setActiveMriResult(null);
+    setActiveQuestionnaireResult(null);
+    try {
+      sessionStorage.removeItem('neurobehavior_active_mri');
+      sessionStorage.removeItem('neurobehavior_active_questionnaire');
+    } catch (e) {
+      console.warn(e);
+    }
     await api.logout();
     setUser(null);
     setCurrentRoute('auth');

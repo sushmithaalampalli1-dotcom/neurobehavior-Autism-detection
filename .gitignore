@@ -30,6 +30,8 @@ uploads/*
 !uploads/.gitkeep
 reports/generated/*.pdf
 !reports/generated/.gitkeep
+backend/reports/*
+!backend/reports/.gitkeep
 
 # Environment variables
 .env

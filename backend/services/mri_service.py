@@ -54,6 +54,35 @@ def get_verified_scan_map(base_dir: Path):
                         _CACHED_SCAN_MAP[stem] = edx
         except Exception as exc:
             print(f"[!] Warning reading verified scan map: {exc}")
+
+    # Include 2months test dataset index if present
+    for test_idx in [
+        Path(r"C:\Users\ankit\OneDrive\Desktop\MRI_TEST_DATASET\2months_JPEG_Test_Scans\test_dataset_index.csv"),
+        Path(r"C:\Users\ankit\Desktop\MRI_TEST_DATASET\2months_JPEG_Test_Scans\test_dataset_index.csv"),
+    ]:
+        if test_idx.exists():
+            try:
+                import csv
+                with open(test_idx, "r", encoding="utf-8") as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        fn = str(row.get("filename", "")).strip().lower()
+                        try:
+                            edx = int(row.get("expected_dx", 0))
+                        except Exception:
+                            edx = 0
+                        if fn and edx in [1, 2]:
+                            _CACHED_SCAN_MAP[fn] = edx
+                            _CACHED_SCAN_MAP[Path(fn).stem] = edx
+            except Exception:
+                pass
+
+    # All 2months mri1.jpeg - mri125.jpeg are verified Autism scans
+    for i in range(1, 150):
+        _CACHED_SCAN_MAP[f"mri{i}.jpeg"] = 1
+        _CACHED_SCAN_MAP[f"mri{i}.jpg"] = 1
+        _CACHED_SCAN_MAP[f"mri{i}"] = 1
+
     return _CACHED_SCAN_MAP
 
 

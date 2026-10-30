@@ -5,7 +5,7 @@ and Behavioral Features with Personalized Support System.
 """
 import os
 from flask import Flask, jsonify
-from backend.config import config_by_name
+from backend.config import config_by_name, BASE_DIR
 from backend.extensions import db, cors
 from backend.routes import (
     health_bp,
@@ -31,11 +31,7 @@ def create_app(config_name: str = None) -> Flask:
 
     # Initialize extensions
     db.init_app(app)
-    allowed_origins = "*" if app.config.get("DEBUG") else [
-        app.config.get("CORS_ORIGIN", "http://localhost:5173"),
-        "http://127.0.0.1:5173",
-    ]
-    cors.init_app(app, resources={r"/api/*": {"origins": allowed_origins}})
+    cors.init_app(app, resources={r"/api/*": {"origins": "*"}})
 
     # Register API blueprints
     app.register_blueprint(health_bp)
@@ -71,28 +67,37 @@ def create_app(config_name: str = None) -> Flask:
         safe_name = os.path.basename(filename)
         return send_from_directory(app.config["UPLOAD_FOLDER"], safe_name)
 
-    # Root welcome / index route
-    @app.route("/")
-    def index():
-        from backend.config import Config
-        has_25d = Config.MODEL_25D_PATH.exists()
+    # Static frontend SPA routing (Serves built React assets in production)
+    frontend_dist = BASE_DIR / "frontend" / "dist"
+
+    @app.route("/", defaults={"path": ""})
+    @app.route("/<path:path>")
+    def serve_frontend_or_status(path):
+        from flask import send_from_directory
+        # Prevent intercepting /api routes if an endpoint was 404
+        if path.startswith("api/"):
+            return jsonify({"error": f"API endpoint '/{path}' not found."}), 404
+
+        # If frontend build exists, serve React SPA
+        if frontend_dist.exists() and (frontend_dist / "index.html").exists():
+            target_file = frontend_dist / path
+            if path and target_file.exists() and target_file.is_file():
+                return send_from_directory(frontend_dist, path)
+            return send_from_directory(frontend_dist, "index.html")
+
+        # Fallback to JSON status if no frontend build present
         return jsonify({
             "project": "NeuroBehavior-ASD",
             "full_title": "Deep Learning-Based Autism Detection Using Brain Imaging Biomarkers and Behavioral Features with Personalized Support System",
             "status": "Online (Production Ready)",
             "health_check": "/api/health",
             "documentation": "See README.md in project root",
-            "mri_model": "2.5D Multi-Channel CNN (Active, Threshold=0.560)" if has_25d else "2D CNN Baseline (Active, Threshold=0.550)",
-            "iasq_module": "IASQ-1.0 (10-Item Verified Clinical Instrument Active)",
-            "target_classes": {
-                "DX_GROUP_1": "Autism / ASD",
-                "DX_GROUP_2": "Control / Non-autism"
-            },
             "disclaimer": "Academic engineering research system. Not a standalone clinical diagnostic device."
         }), 200
 
     # Auto-initialize database tables and seed data within application context
     with app.app_context():
+        _run_db_migrations()
         db.create_all()
         # Seed initial support centres if none exist
         SupportCentreService.seed_initial_centres()
@@ -101,6 +106,33 @@ def create_app(config_name: str = None) -> Flask:
             _seed_demo_personas()
 
     return app
+
+
+def _run_db_migrations():
+    """Ensure newly introduced User demographic and reset columns exist in SQLite."""
+    from sqlalchemy import text
+    try:
+        with db.engine.connect() as conn:
+            existing_cols = [
+                row[1] for row in conn.execute(text("PRAGMA table_info(users)")).fetchall()
+            ]
+            new_cols = [
+                ("age", "REAL"),
+                ("gender", "TEXT"),
+                ("blood_group", "TEXT"),
+                ("phone_number", "TEXT"),
+                ("parent_name", "TEXT"),
+                ("parent_phone", "TEXT"),
+                ("parent_relation", "TEXT"),
+                ("reset_token", "TEXT"),
+                ("reset_token_expiry", "TIMESTAMP"),
+            ]
+            for col_name, col_type in new_cols:
+                if col_name not in existing_cols:
+                    conn.execute(text(f"ALTER TABLE users ADD COLUMN {col_name} {col_type}"))
+            conn.commit()
+    except Exception as e:
+        print("[*] DB migration check notice:", e)
 
 
 def _seed_demo_personas():

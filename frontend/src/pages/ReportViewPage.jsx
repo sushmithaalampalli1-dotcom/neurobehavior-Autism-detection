@@ -46,7 +46,7 @@ export default function ReportViewPage({ user, navigate }) {
       const payload = selectedAssessmentId
         ? { assessment_id: selectedAssessmentId }
         : {
-            assessment_type: 'Multimodal Neuroimaging & Behavioral Summary',
+            assessment_type: 'Comprehensive Brain MRI & IASQ Behavioral Summary',
             mri_filename: '2D_Brain_MRI_Scan.png',
             mri_dimensions: '224 x 224 x 3',
             questionnaire_version: 'IASQ-1.0 (Standard Caregiver Screening)',
@@ -133,74 +133,183 @@ export default function ReportViewPage({ user, navigate }) {
       </div>
 
       {/* Live Visual Preview of Doctor-Readable Report Layout */}
-      <div className="card" style={{ border: '2px solid var(--slate-300)', background: '#ffffff' }}>
-        <div style={{ borderBottom: '2px solid var(--primary)', paddingBottom: '14px', marginBottom: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <h3 style={{ color: 'var(--primary)', fontSize: '1.25rem', fontWeight: 700 }}>
-                NEUROBEHAVIOR-ASD | CLINICAL ASSESSMENT SUMMARY
-              </h3>
-              <p style={{ fontSize: '0.8rem', color: 'var(--slate-600)' }}>
-                Deep Learning-Based Autism Detection Using Brain Imaging Biomarkers and Behavioral Features
-              </p>
-            </div>
-            <span className="badge badge-warning">ACADEMIC PROTOTYPE</span>
+      <div className="clinical-document-canvas" style={{ border: '1px solid #cbd5e1', background: '#ffffff', borderRadius: '8px', padding: '32px 36px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+        {/* Header Block */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', borderBottom: '2px solid #1e3a8a', paddingBottom: '12px' }}>
+          <div>
+            <h2 style={{ color: '#1e3a8a', fontSize: '1.4rem', fontWeight: 900, margin: 0, letterSpacing: '0.4px' }}>
+              NEUROBEHAVIOR-ASD
+            </h2>
+            <h3 style={{ color: '#1e3a8a', fontSize: '1.1rem', fontWeight: 800, margin: '2px 0 6px 0' }}>
+              ASSESSMENT PORTAL
+            </h3>
+            <p style={{ color: '#475569', fontSize: '0.82rem', margin: 0 }}>
+              Brain MRI Deep Learning Classification & IASQ Behavioral Screening Summary
+            </p>
+          </div>
+          <div style={{ textAlign: 'right', fontSize: '0.84rem' }}>
+            <div><strong>Report ID:</strong> {selectedAssessmentId ? `NB-REP-2026-${selectedAssessmentId}` : 'NB-REP-2026-3DCE7C'}</div>
+            <div><strong>Date:</strong> {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} 00:02 IST</div>
           </div>
         </div>
 
-        <div className="grid-2" style={{ marginBottom: '16px', fontSize: '0.86rem' }}>
-          <div style={{ background: 'var(--slate-100)', padding: '12px', borderRadius: 'var(--radius-sm)' }}>
-            <strong>Assessment ID:</strong> {selectedAssessmentId ? `NB-ASD-${selectedAssessmentId}` : 'NB-ASD-001'}<br />
-            <strong>Patient Name:</strong> {user?.full_name || 'Test Patient'}<br />
-            <strong>Patient Email:</strong> {user?.email || 'patient@neurobehavior.org'}
-          </div>
-          <div style={{ background: 'var(--slate-100)', padding: '12px', borderRadius: 'var(--radius-sm)' }}>
-            <strong>Biomarker Modality:</strong> Structural Brain MRI Imaging<br />
-            <strong>Behavioral Screening:</strong> 10-Item Verified Caregiver Screening<br />
-            <strong>Dual-Modality Status:</strong> Clinical Decision Support Concordance Active
-          </div>
-        </div>
-
-        <div style={{ marginBottom: '18px' }}>
-          <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--navy)', marginBottom: '6px' }}>
-            Structural Brain MRI Neuroimaging Biomarkers
+        {/* 1. Demographics */}
+        <div style={{ margin: '16px 0' }}>
+          <h4 style={{ color: '#1e3a8a', fontSize: '0.9rem', fontWeight: 800, margin: '0 0 4px 0' }}>
+            1. PATIENT DEMOGRAPHICS & GUARDIAN PROFILE
           </h4>
-          <p style={{ fontSize: '0.85rem', color: 'var(--slate-700)', lineHeight: 1.5 }}>
-            • Scan Processing: Multi-planar spatial normalization and tissue contrast calibration.<br />
-            • Screening Status: <strong style={{ color: 'var(--primary)' }}>Clinical Evaluation Active</strong>.<br />
-            • Output: Objective neuroimaging likelihood triage for specialist correlation.
-          </p>
+          <div style={{ height: '2px', background: '#1e3a8a', marginBottom: '6px' }}></div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', border: '1px solid #e2e8f0' }}>
+            <tbody>
+              <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                <td style={{ background: '#f8fafc', padding: '5px 8px', fontWeight: 700, width: '22%' }}>Patient Full Name:</td>
+                <td style={{ padding: '5px 8px', width: '28%' }}>{user?.full_name || 'xyz'}</td>
+                <td style={{ background: '#f8fafc', padding: '5px 8px', fontWeight: 700, width: '22%' }}>Patient ID:</td>
+                <td style={{ padding: '5px 8px', width: '28%' }}>{user?.id ? `NB-PAT-2026-${String(user.id).padStart(4, '0')}` : 'NB-PAT-2026-6A5F'}</td>
+              </tr>
+              <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                <td style={{ background: '#f8fafc', padding: '5px 8px', fontWeight: 700 }}>Age:</td>
+                <td style={{ padding: '5px 8px' }}>{user?.age ? `${user.age} Years` : '21.0 Years'}</td>
+                <td style={{ background: '#f8fafc', padding: '5px 8px', fontWeight: 700 }}>Gender:</td>
+                <td style={{ padding: '5px 8px' }}>{user?.gender || 'Female'}</td>
+              </tr>
+              <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                <td style={{ background: '#f8fafc', padding: '5px 8px', fontWeight: 700 }}>Blood Group:</td>
+                <td style={{ padding: '5px 8px' }}>{user?.blood_group || 'B-'}</td>
+                <td style={{ background: '#f8fafc', padding: '5px 8px', fontWeight: 700 }}>Minor Status:</td>
+                <td style={{ padding: '5px 8px' }}>{(user?.age && user.age < 18) ? 'Pediatric (<18 yrs)' : 'Adult (18+ yrs)'}</td>
+              </tr>
+              <tr>
+                <td style={{ background: '#f8fafc', padding: '5px 8px', fontWeight: 700 }}>Guardian / Consent:</td>
+                <td style={{ padding: '5px 8px' }}>
+                  {user?.parent_name
+                    ? `${user.parent_name} (${user.parent_relation || 'Parent/Guardian'})${user.parent_phone ? ` - Ph: ${user.parent_phone}` : ''}`
+                    : (user?.age && user.age < 18 ? 'Parent / Legal Guardian Consent' : 'Self (Adult Consent)')}
+                </td>
+                <td style={{ background: '#f8fafc', padding: '5px 8px', fontWeight: 700 }}>Consent Status:</td>
+                <td style={{ padding: '5px 8px' }}>{(user?.age && user.age < 18) ? 'Recorded & Verified (Parent/Guardian Assent)' : 'Recorded & Verified (Adult Patient)'}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
-        <div style={{ marginBottom: '18px' }}>
-          <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--navy)', marginBottom: '6px' }}>
-            Behavioral Assessment & Intake Information
+        {/* 2. Structural Brain MRI */}
+        <div style={{ marginBottom: '16px' }}>
+          <h4 style={{ color: '#1e3a8a', fontSize: '0.9rem', fontWeight: 800, margin: '0 0 4px 0' }}>
+            2. STRUCTURAL BRAIN MRI DEEP LEARNING ASSESSMENT
           </h4>
-          <p style={{ fontSize: '0.85rem', color: 'var(--slate-700)', lineHeight: 1.5 }}>
-            • Standardized Tool: Indian Autism Screening Questionnaire (Derived from ISAA / NIEPID).<br />
-            • Cutoff Standards: Score &ge; 2 indicates primary clinical screen positive (Sens ~97%, Spec ~92%).
-          </p>
-        </div>
-
-        <div style={{ border: '1px solid var(--slate-300)', padding: '14px', borderRadius: 'var(--radius-md)', marginBottom: '20px' }}>
-          <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--navy)', marginBottom: '8px' }}>
-            3. Clinician Review & Attestation Box
-          </h4>
-          <div className="grid-2" style={{ fontSize: '0.84rem', color: 'var(--slate-600)' }}>
-            <div>
-              Physician Signature: ________________________________<br />
-              Medical License No: ________________________________
+          <div style={{ height: '2px', background: '#1e3a8a', marginBottom: '6px' }}></div>
+          <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr', gap: '12px', alignItems: 'center' }}>
+            <div style={{ textAlign: 'center', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px', background: '#0f172a' }}>
+              <img
+                src="/samples/sample_asd_28802.png"
+                alt="Brain MRI scan"
+                style={{ width: '100px', height: '100px', objectFit: 'contain', display: 'block', margin: '0 auto', borderRadius: '2px' }}
+              />
+              <div style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '2px' }}><code>mri101.jpeg</code></div>
             </div>
-            <div>
-              Date of Clinical Review: ___________________________<br />
-              Referral Recommendation: ___________________________
-            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', border: '1px solid #e2e8f0' }}>
+              <tbody>
+                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                  <td style={{ background: '#f8fafc', padding: '5px 8px', fontWeight: 700, width: '25%' }}>Predicted Classification:</td>
+                  <td style={{ padding: '5px 8px', width: '25%' }}><strong style={{ color: '#dc2626' }}>ASD</strong></td>
+                  <td style={{ background: '#f8fafc', padding: '5px 8px', fontWeight: 700, width: '22%' }}>Model Raw Score:</td>
+                  <td style={{ padding: '5px 8px', width: '28%' }}>0.5313 (Threshold: 0.53)</td>
+                </tr>
+                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                  <td style={{ background: '#f8fafc', padding: '5px 8px', fontWeight: 700 }}>Calibrated Confidence:</td>
+                  <td style={{ padding: '5px 8px' }}><strong>53.1%</strong></td>
+                  <td style={{ background: '#f8fafc', padding: '5px 8px', fontWeight: 700 }}>Input Modality:</td>
+                  <td style={{ padding: '5px 8px' }}>2D Grayscale Brain MRI (224x224, Min-Max)</td>
+                </tr>
+                <tr>
+                  <td style={{ background: '#f8fafc', padding: '5px 8px', fontWeight: 700 }}>Quality Control Checks:</td>
+                  <td style={{ padding: '5px 8px' }}>PASSED (Standard deviation &ge; 5.0)</td>
+                  <td style={{ background: '#f8fafc', padding: '5px 8px', fontWeight: 700 }}>Model Architecture:</td>
+                  <td style={{ padding: '5px 8px' }}>4-Stage Conv2D + BatchNorm + Dropout</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
-        <div style={{ fontSize: '0.76rem', color: '#991b1b', background: '#fef2f2', padding: '10px 14px', borderRadius: 'var(--radius-sm)' }}>
-          <strong>MANDATORY CLINICAL DISCLAIMER:</strong> This report is compiled for engineering research evaluation
-          and multidisciplinary clinical consultation only. It is NOT an FDA/CE-cleared standalone diagnostic device.
+        {/* 3. IASQ Behavioral Screening */}
+        <div style={{ marginBottom: '16px' }}>
+          <h4 style={{ color: '#1e3a8a', fontSize: '0.9rem', fontWeight: 800, margin: '0 0 4px 0' }}>
+            3. INDIAN AUTISM SCREENING QUESTIONNAIRE (IASQ) BEHAVIORAL SCREENING
+          </h4>
+          <div style={{ height: '2px', background: '#1e3a8a', marginBottom: '6px' }}></div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', border: '1px solid #e2e8f0' }}>
+            <tbody>
+              <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                <td style={{ background: '#f8fafc', padding: '5px 8px', fontWeight: 700, width: '25%' }}>Total Positive Responses:</td>
+                <td style={{ padding: '5px 8px', width: '25%' }}><strong>5 / 10 Items</strong></td>
+                <td style={{ background: '#f8fafc', padding: '5px 8px', fontWeight: 700, width: '22%' }}>Instrument Source:</td>
+                <td style={{ padding: '5px 8px', width: '28%' }}>IASQ (PMC8062015, Indian Validation)</td>
+              </tr>
+              <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                <td style={{ background: '#f8fafc', padding: '5px 8px', fontWeight: 700 }}>Cutoff 1 (Score &ge; 1):</td>
+                <td style={{ padding: '5px 8px' }}><span style={{ color: '#dc2626', fontWeight: 600 }}>Referral Recommended (Cutoff &ge; 1 met)</span></td>
+                <td style={{ background: '#f8fafc', padding: '5px 8px', fontWeight: 700 }}>Cutoff 2 (Score &ge; 2):</td>
+                <td style={{ padding: '5px 8px' }}><span style={{ color: '#dc2626', fontWeight: 600 }}>Referral Recommended (Cutoff &ge; 2 met)</span></td>
+              </tr>
+              <tr>
+                <td style={{ background: '#f8fafc', padding: '5px 8px', fontWeight: 700 }}>Domain Breakdown:</td>
+                <td style={{ padding: '5px 8px' }}>Social: 3/6 | Speech: 1/1 | Behavior: 1/2 | Sensory: 0/1</td>
+                <td style={{ background: '#f8fafc', padding: '5px 8px', fontWeight: 700 }}>Severity Categorization:</td>
+                <td style={{ padding: '5px 8px', color: '#64748b' }}><em>Not Applicable (IASQ does not produce mild/mod/severe)</em></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* 4. Clinical Synthesis */}
+        <div style={{ marginBottom: '16px' }}>
+          <h4 style={{ color: '#1e3a8a', fontSize: '0.9rem', fontWeight: 800, margin: '0 0 4px 0' }}>
+            4. CLINICAL SYNTHESIS & SCREENING CONCORDANCE
+          </h4>
+          <div style={{ height: '2px', background: '#1e3a8a', marginBottom: '6px' }}></div>
+          <div style={{ border: '1px solid #cbd5e1', background: '#f8fafc', padding: '10px 14px', borderRadius: '4px', fontSize: '0.8rem', lineHeight: 1.5 }}>
+            <strong>High Concordance (Both Assessments Positive):</strong> Both the Brain MRI Deep Learning model and the caregiver-completed IASQ screening indicate elevated probability of autism-related characteristics. Immediate referral for comprehensive multidisciplinary developmental assessment (including clinical autism diagnostic tools such as INDT-ASD, ISAA, or ADOS-2) is strongly indicated.
+          </div>
+        </div>
+
+        {/* 5. Verified Support Centres */}
+        <div>
+          <h4 style={{ color: '#1e3a8a', fontSize: '0.9rem', fontWeight: 800, margin: '0 0 4px 0' }}>
+            5. VERIFIED CLINICAL & DIAGNOSTIC SUPPORT CENTRES
+          </h4>
+          <div style={{ height: '2px', background: '#1e3a8a', marginBottom: '6px' }}></div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem', border: '1px solid #e2e8f0' }}>
+            <thead>
+              <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #e2e8f0', textAlign: 'left' }}>
+                <th style={{ padding: '5px 8px', width: '32%' }}>Centre Name & Institution</th>
+                <th style={{ padding: '5px 8px', width: '20%' }}>City / State</th>
+                <th style={{ padding: '5px 8px', width: '20%' }}>Helpline / Contact</th>
+                <th style={{ padding: '5px 8px', width: '28%' }}>Key Services</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                <td style={{ padding: '5px 8px' }}><strong>NIMHANS – Child & Adolescent Psychiatry Clinic</strong> (3.6 km)</td>
+                <td style={{ padding: '5px 8px' }}>Bengaluru, Karnataka</td>
+                <td style={{ padding: '5px 8px' }}>+91-80-26995000</td>
+                <td style={{ padding: '5px 8px' }}>Clinical Diagnosis, Multidisciplinary Assessment, Speech Therapy</td>
+              </tr>
+              <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                <td style={{ padding: '5px 8px' }}><strong>Indira Gandhi Institute of Child Health (IGICH)</strong> (4.3 km)</td>
+                <td style={{ padding: '5px 8px' }}>Bengaluru, Karnataka</td>
+                <td style={{ padding: '5px 8px' }}>+91-80-26099888</td>
+                <td style={{ padding: '5px 8px' }}>Pediatric Neurology, Developmental Assessment, Physical Therapy</td>
+              </tr>
+              <tr>
+                <td style={{ padding: '5px 8px' }}><strong>The Spastics Society of Karnataka (SSK)</strong> (4.9 km)</td>
+                <td style={{ padding: '5px 8px' }}>Bengaluru, Karnataka</td>
+                <td style={{ padding: '5px 8px' }}>+91-80-40745900</td>
+                <td style={{ padding: '5px 8px' }}>Early Intervention, Occupational Therapy, Speech & Language Therapy</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 

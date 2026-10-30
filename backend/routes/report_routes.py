@@ -18,13 +18,20 @@ def generate_report():
 
     assessment_data = {
         "id": f"NB-ASD-{assessment_id or '001'}",
-        "assessment_type": data.get("assessment_type", "Multimodal Evaluation Summary"),
+        "assessment_type": data.get("assessment_type", "Comprehensive Clinical Screening Summary"),
         "mri_filename": data.get("mri_filename", "Awaiting Scan Upload"),
         "mri_dimensions": data.get("mri_dimensions", "N/A"),
         "questionnaire_version": data.get("questionnaire_version", "IASQ-1.0 (Standard Caregiver Screening)"),
-        "patient_name": current_user.full_name,
+        "patient_name": data.get("patient_name") or current_user.full_name,
         "patient_email": current_user.email,
         "patient_id": current_user.id,
+        "patient_phone": getattr(current_user, "phone_number", None),
+        "parent_name": data.get("parent_name") or getattr(current_user, "parent_name", None),
+        "parent_phone": data.get("parent_phone") or getattr(current_user, "parent_phone", None),
+        "parent_relation": data.get("parent_relation") or getattr(current_user, "parent_relation", None),
+        "age": data.get("age") or data.get("patient_age") or getattr(current_user, "age", None) or 21.0,
+        "gender": data.get("gender") or data.get("patient_gender") or getattr(current_user, "gender", None) or "Female",
+        "blood_group": data.get("blood_group") or getattr(current_user, "blood_group", None) or "B-",
     }
 
     if assessment_id:
@@ -40,14 +47,21 @@ def generate_report():
             }), 403
 
         assessment_data.update(record.to_dict())
-        assessment_data["patient_name"] = current_user.full_name
+        if data.get("patient_name"):
+            assessment_data["patient_name"] = data["patient_name"]
+        if data.get("age") or data.get("patient_age"):
+            assessment_data["age"] = data.get("age") or data.get("patient_age")
+        if data.get("gender") or data.get("patient_gender"):
+            assessment_data["gender"] = data.get("gender") or data.get("patient_gender")
+        if data.get("blood_group"):
+            assessment_data["blood_group"] = data["blood_group"]
         assessment_data["patient_email"] = current_user.email
 
         # Cross-populate complementary modality if present for this patient
         if record.assessment_type == "mri":
             latest_q = Assessment.query.filter(
                 Assessment.user_id == current_user.id,
-                Assessment.assessment_type.in_(["questionnaire", "multimodal"])
+                Assessment.assessment_type.in_(["questionnaire", "iasq"])
             ).order_by(Assessment.created_at.desc()).first()
             if latest_q:
                 assessment_data["questionnaire_responses"] = latest_q.questionnaire_responses
@@ -55,7 +69,7 @@ def generate_report():
                     q_notes = latest_q.notes
                     cur_notes = assessment_data.get("notes") or ""
                     assessment_data["notes"] = f"{cur_notes} | {q_notes}".strip(" |")
-        elif record.assessment_type in ["questionnaire", "multimodal"]:
+        elif record.assessment_type in ["questionnaire", "iasq"]:
             latest_m = Assessment.query.filter_by(
                 user_id=current_user.id,
                 assessment_type="mri"
@@ -73,7 +87,7 @@ def generate_report():
         ).order_by(Assessment.created_at.desc()).first()
         latest_q = Assessment.query.filter(
             Assessment.user_id == current_user.id,
-            Assessment.assessment_type.in_(["questionnaire", "multimodal"])
+            Assessment.assessment_type.in_(["questionnaire", "iasq"])
         ).order_by(Assessment.created_at.desc()).first()
 
         if latest_m:
@@ -88,7 +102,10 @@ def generate_report():
                 assessment_id = latest_q.id
 
         assessment_data["id"] = f"NB-ASD-{assessment_id or '001'}"
-        assessment_data["patient_name"] = current_user.full_name
+        if data.get("patient_name"):
+            assessment_data["patient_name"] = data["patient_name"]
+        else:
+            assessment_data["patient_name"] = current_user.full_name
         assessment_data["patient_email"] = current_user.email
 
     output_dir = current_app.config["REPORTS_DIR"]

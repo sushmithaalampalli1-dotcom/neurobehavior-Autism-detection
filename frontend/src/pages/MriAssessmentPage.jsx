@@ -19,8 +19,9 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
   const handleFile = (file) => {
     if (!file) return;
     const lower = file.name.toLowerCase();
-    if (!lower.endsWith('.nii') && !lower.endsWith('.nii.gz') && !lower.endsWith('.png')) {
-      setError('Unsupported scan format. Please upload a standard brain MRI scan (.nii, .nii.gz) or verified MRI slice (.png).');
+    const isValid = lower.endsWith('.nii') || lower.endsWith('.nii.gz') || lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.jpeg');
+    if (!isValid) {
+      setError('Unsupported scan format. Please upload a brain MRI scan (.nii, .nii.gz, .png, .jpg, .jpeg).');
       setSelectedFile(null);
       setPreviewUrl(null);
       return;
@@ -30,7 +31,7 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
     setError('');
     setUploadResult(null);
 
-    if (lower.endsWith('.png')) {
+    if (lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
     } else {

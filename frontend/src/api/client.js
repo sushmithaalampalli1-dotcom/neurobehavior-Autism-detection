@@ -98,16 +98,35 @@ export const api = {
   },
 
   // Auth Endpoints
-  async register(full_name, email, password, role = 'patient') {
+  async register(registrationData) {
+    // Accepts object or positional arguments for backwards compatibility
+    const payload = typeof registrationData === 'object'
+      ? registrationData
+      : { full_name: arguments[0], email: arguments[1], password: arguments[2], role: arguments[3] || 'patient' };
+
     const data = await request('/auth/register', {
       method: 'POST',
-      body: { full_name, email, password, role },
+      body: payload,
     });
     if (data.token) {
       authStorage.setToken(data.token);
       authStorage.setUser(data.user);
     }
     return data;
+  },
+
+  async forgotPassword(email) {
+    return request('/auth/forgot-password', {
+      method: 'POST',
+      body: { email },
+    });
+  },
+
+  async resetPassword(email, token, new_password) {
+    return request('/auth/reset-password', {
+      method: 'POST',
+      body: { email, token, new_password },
+    });
   },
 
   async login(email, password, remember = false) {
