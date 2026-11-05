@@ -67,14 +67,14 @@ Autism Spectrum Disorder (ASD), Deep Learning, Structural MRI, 2.5D Convolutiona
 
 Despite the clear benefits of early intervention, a significant ``diagnostic gap'' persists worldwide. Standard diagnostic confirmation depends almost exclusively on expert-administered behavioral evaluation protocols, prominently the Autism Diagnostic Observation Schedule, Second Edition (ADOS-2) and the Autism Diagnostic Interview-Revised (ADI-R) \cite{lord2000autism}. Administering these instruments requires certified specialists and 2 to 4 hours of intensive testing per child. In low- and middle-income countries (LMICs) and non-metropolitan districts, severe shortages of accredited child development specialists result in waitlists of 18 to 36 months, frequently delaying formal therapy until late childhood.
 
-Computer-aided screening leveraging structural Magnetic Resonance Imaging (sMRI) provides an objective approach to assist developmental triage. Structural MRI captures anatomical morphology without ionizing radiation. Neuroanatomical studies have linked early autistic trajectories with distinctive morphological markers, including accelerated brain volume overgrowth in infancy, altered cortical surface expansion across frontal and temporal regions, and atypical morphometry in subcortical structures such as the corpus callosum and basal ganglia \cite{hazlett2017early, herbert2004localization}.
+Computer-aided screening leveraging structural Magnetic Resonance Imaging (sMRI) provides an objective approach to assist developmental triage. Structural MRI captures anatomical morphology without ionizing radiation. Neuroanatomical studies have linked early autistic trajectories with distinctive morphological markers, including accelerated total brain volume overgrowth in infancy \cite{courchesne2001unusual}, increased extra-axial cerebrospinal fluid volume \cite{shen2013early}, hyperexpansion of cortical surface area \cite{hazlett2017early}, localized white matter abnormalities \cite{herbert2004localization}, and distinctive neuroanatomical morphology across subcortical structures \cite{amaral2008neuroanatomy, ecker2010investigating}.
 
 Translating these biological discoveries into practical, clinic-ready software has nevertheless encountered several hurdles:
 \begin{enumerate}
     \item \textbf{High Computational Demand and Overfitting in 3D-CNNs:} Full 3D volumetric convolutions demand millions of parameters and excessive GPU memory, rendering them prone to overfitting on moderately sized medical cohorts.
     \item \textbf{Information Loss in 2D Slices:} Conventional single-slice 2D models discard surrounding structural context and subtle tissue boundary gradients.
     \item \textbf{Format Inflexibility in Clinical Practice:} Most published algorithms operate exclusively on research-grade NIfTI volumes (\texttt{.nii}, \texttt{.nii.gz}). In contrast, district hospitals and peripheral clinics often work with standard 2D image exports (\texttt{.jpg}, \texttt{.png}) or physical film mounted on optical lightboxes photographed with mobile phones.
-    \item \textbf{Multi-Site Scanner Inhomogeneity:} Public repositories like the Autism Brain Imaging Data Exchange (ABIDE I and ABIDE II) \cite{dimartino2014autism} aggregate scans across 24 international clinical sites with heterogeneous scanner manufacturers, field strengths (1.5T vs. 3.0T), and pulse sequences.
+    \item \textbf{Multi-Site Scanner Inhomogeneity:} Public repositories like the Autism Brain Imaging Data Exchange (ABIDE I and ABIDE II) \cite{dimartino2014autism, dimartino2017abide2} aggregate scans across 24 international clinical sites with heterogeneous scanner manufacturers, field strengths (1.5T vs. 3.0T), and pulse sequences.
     \item \textbf{Clinical and Behavioral Disconnect:} Purely algorithmic models frequently output abstract probability scores without integrating validated behavioral questionnaires or actionable geographic care routing for caregivers.
 \end{enumerate}
 
@@ -94,11 +94,11 @@ To overcome these challenges, we present \textbf{NeuroBehavior-ASD}, an end-to-e
 \section{Related Work}
 
 \subsection{Deep Learning on Brain Neuroimaging for ASD}
-The release of the ABIDE consortia datasets \cite{dimartino2014autism} catalyzed extensive machine learning research targeting neuroimaging-based ASD diagnosis. Early methodologies extracted regional morphometric parameters (cortical thickness, surface area, subcortical volumes) via FreeSurfer pipelines for classification using Support Vector Machines (SVM) or Random Forests \cite{ecker2010investigating}. While interpretable, FreeSurfer feature extraction is computationally prohibitive (8--12 hours per scan) and sensitive to minor artifacts.
+The release of the ABIDE consortia datasets \cite{dimartino2014autism, dimartino2017abide2} catalyzed extensive machine learning research targeting neuroimaging-based ASD diagnosis. Early methodologies extracted regional morphometric parameters (cortical thickness, surface area, subcortical volumes) via FreeSurfer pipelines for classification using Support Vector Machines (SVM) or Random Forests \cite{ecker2010investigating}. While interpretable, FreeSurfer feature extraction is computationally prohibitive (8--12 hours per scan) and sensitive to minor artifacts.
 
-Subsequent investigations transitioned to deep neural networks. Heinsfeld \emph{et al.} \cite{heinsfeld2018identification} applied deep autoencoders to resting-state fMRI connectivity matrices from ABIDE, reporting roughly 70\% accuracy. Eslami \emph{et al.} \cite{eslami2019asd} introduced \emph{ASD-DiagNet}, achieving 70.4\% accuracy across 1,035 subjects using functional connectivity autoencoders. For structural MRI, 3D-CNNs were explored by Zou \emph{et al.} \cite{zou20173d}; however, high memory consumption necessitated aggressive downsampling, with classification accuracy plateauing between 65\% and 72\% due to inter-site scanner variability.
+Subsequent investigations transitioned to deep neural networks. Heinsfeld \emph{et al.} \cite{heinsfeld2018identification} applied deep autoencoders to resting-state fMRI connectivity matrices from ABIDE, reporting roughly 70\% accuracy. Eslami \emph{et al.} \cite{eslami2019asd} introduced \emph{ASD-DiagNet}, achieving 70.4\% accuracy across 1,035 subjects using functional connectivity autoencoders. For structural MRI, 3D-CNNs were explored by Zou \emph{et al.} \cite{zou20173d}; however, high memory consumption necessitated aggressive downsampling, with classification accuracy plateauing between 65\% and 72\% due to inter-site scanner variability. More recently, convolutional frameworks \cite{aghdam2019analysis, sharif2021novel} and population Graph Convolutional Networks (GCNs) \cite{parisot2018disease} have incorporated phenotype associations. Comprehensive reviews by Khodatars \emph{et al.} \cite{khodatars2021deep} emphasize that addressing cross-site distribution shifts without prohibitive 3D compute remains the primary research priority.
 
-Recent computer vision advances demonstrate the efficacy of transfer learning from natural image domains to biomedical imaging. Depthwise separable convolutions, exemplified by MobileNetV2 \cite{sandler2018mobilenetv2}, dramatically reduce parameter volume while functioning as robust, generic texture and boundary detectors when fine-tuned on standardized medical planes.
+To balance spatial richness and computational tractability, multi-slice 2.5D convolutional formulations were pioneered by Roth \emph{et al.} \cite{roth2015deeporgan}. Concurrently, deep transfer learning paradigms leveraging architectures such as ResNet \cite{he2016deep} and depthwise separable MobileNetV2 \cite{sandler2018mobilenetv2} have demonstrated exceptional generalization across clinical imaging domains \cite{esteva2017dermatologist}, allowing models to repurpose hierarchical boundary detectors for specialized radiological tasks.
 
 \subsection{Standardized Behavioral Screening Instruments}
 Primary care pediatric screening relies on caregiver-completed questionnaires. While the Modified Checklist for Autism in Toddlers, Revised with Follow-up (M-CHAT-R/F) is widely employed in Western contexts \cite{robins2014validation}, linguistic, cultural, and familial dynamics necessitate regional validation. In India, the National Institute for the Empowerment of Persons with Intellectual Disabilities (NIEPID) established the Indian Scale for Assessment of Autism (ISAA) \cite{nimh2009isaa}. To facilitate rapid primary healthcare triage, Mukherjee \emph{et al.} \cite{mukherjee2021indian} developed and clinically validated the 10-item Indian Autism Screening Questionnaire (IASQ; PMC8062015), demonstrating high psychometric sensitivity ($>85\%$) and specificity ($>80\%$) at a cutoff score of $\ge 2$.
@@ -112,12 +112,12 @@ Modern healthcare AI guidelines mandate that algorithmic diagnostic tools must f
 \section{Materials and Datasets}
 
 \subsection{ABIDE I and ABIDE II Repositories}
-This study leverages retrospective T1-weighted structural MRI data from the \textbf{Autism Brain Imaging Data Exchange (ABIDE I and ABIDE II)} consortia \cite{dimartino2014autism}. The aggregated cohort comprises \textbf{2,221 verified subjects} collected across 24 independent international imaging sites:
+This study leverages retrospective T1-weighted structural MRI data from the \textbf{Autism Brain Imaging Data Exchange (ABIDE I and ABIDE II)} consortia \cite{dimartino2014autism, dimartino2017abide2}. The aggregated cohort comprises \textbf{2,221 verified subjects} collected across 24 independent international imaging sites:
 \begin{itemize}
     \item \textbf{Autism Spectrum Disorder ($\text{DX\_GROUP} = 1$):} $N = 1,058$ participants.
     \item \textbf{Typical Neurotypical Controls ($\text{DX\_GROUP} = 2$):} $N = 1,163$ participants.
 \end{itemize}
-Subject ages range from 5.1 to 64.0 years across both cohorts. High-resolution anatomical 3D volumes were collected using clinical 1.5-Tesla and 3.0-Tesla MRI scanners using MPRAGE or equivalent pulse sequences.
+Subject ages range from 5.1 to 64.0 years across both cohorts. High-resolution anatomical 3D volumes were collected using clinical 1.5-Tesla and 3.0-Tesla MRI scanners using MPRAGE or equivalent pulse sequences. Mitigating scanner inhomogeneity is critical in multi-center imaging, where hardware and acquisition variations can induce artificial distribution shifts \cite{nielsen2013multisite, abraham2017deriving, fortin2018harmonization}.
 
 \subsection{The 2-Months Pediatric Standardized JPEG Cohort}
 In addition to the multi-site adult and adolescent ABIDE repository, we evaluate an independent standardized \textbf{Pediatric 2-Months Axial MRI Cohort} consisting of \textbf{250 verified high-resolution cranial scans}:
@@ -125,7 +125,7 @@ In addition to the multi-site adult and adolescent ABIDE repository, we evaluate
     \item \textbf{Verified Pediatric Autism Cohort ($N = 125$):} Standardized axial T1-weighted cranial slices exhibiting early neurodevelopmental markers of ASD collected during infant and toddler evaluations (\texttt{mri1.jpeg} to \texttt{mri125.jpeg}).
     \item \textbf{Verified Neurotypical Controls ($N = 125$):} Age- and sex-matched control scans from infants exhibiting typical neurodevelopmental trajectories (\texttt{28698\_control.jpeg} to \texttt{28954\_control.jpeg}).
 \end{itemize}
-This cohort reflects practical primary healthcare imaging scenarios where scans are archived as standard 2D image slices (JPEG/PNG) rather than full research NIfTI volumes.
+This early infant cohort is biologically motivated by landmark neuroimaging findings establishing that atypical brain enlargement, extra-axial cerebrospinal fluid prominence, and cortical overgrowth emerge during the first months of life in infants subsequently diagnosed with autism \cite{courchesne2001unusual, shen2013early, hazlett2017early}. Furthermore, this cohort reflects practical primary healthcare imaging scenarios where scans are archived as standard 2D image slices (JPEG/PNG) rather than full research NIfTI volumes.
 
 \subsection{Leakage-Free Subject-Level Partitioning}
 A pervasive flaw in published neuroimaging machine learning studies is random slice-level partitioning, wherein slices from the same individual appear simultaneously across training and evaluation splits, leading to severe artificial metric inflation. To guarantee clinical rigor, we implement strict stratified partitions:
@@ -418,7 +418,7 @@ Importantly, NeuroBehavior-ASD does not attempt to replace clinical psychiatrist
 % =========================================================================
 % REFERENCES
 % =========================================================================
-\begin{thebibliography}{16}
+\begin{thebibliography}{30}
 
 \bibitem{american2022dsm5}
 American Psychiatric Association, \emph{Diagnostic and Statistical Manual of Mental Disorders (DSM-5-TR)}, 5th ed., text rev. Washington, DC: American Psychiatric Association, 2022.
@@ -432,30 +432,6 @@ G.~Dawson \emph{et al.}, ``Randomized, controlled trial of an intervention for t
 \bibitem{lord2000autism}
 C.~Lord \emph{et al.}, ``The Autism Diagnostic Observation Schedule---Generic: A standard measure of social and communication deficits associated with the spectrum of autism,'' \emph{J. Autism Dev. Disord.}, vol.~30, no.~3, pp.~205--223, Jun. 2000.
 
-\bibitem{hazlett2017early}
-H.~C. Hazlett \emph{et al.}, ``Early brain development in infants at high risk for autism spectrum disorder,'' \emph{Nature}, vol.~542, no.~7641, pp.~348--351, Feb. 2017.
-
-\bibitem{herbert2004localization}
-M.~R. Herbert \emph{et al.}, ``Localization of white matter volume increases in autism and developmental language disorder,'' \emph{Ann. Neurol.}, vol.~55, no.~4, pp.~530--540, Apr. 2004.
-
-\bibitem{dimartino2014autism}
-A.~Di~Martino \emph{et al.}, ``The Autism Brain Imaging Data Exchange: Towards a large-scale evaluation of the intrinsic brain architecture in autism,'' \emph{Mol. Psychiatry}, vol.~19, no.~6, pp.~659--667, Jun. 2014.
-
-\bibitem{ecker2010investigating}
-C.~Ecker \emph{et al.}, ``Investigating the predictive value of whole-brain structural MR scans in autism spectrum disorder: A pattern classification approach,'' \emph{NeuroImage}, vol.~49, no.~1, pp.~44--56, Jan. 2010.
-
-\bibitem{heinsfeld2018identification}
-A.~S. Heinsfeld, A.~R. Franco, R.~C. Craddock, A.~Buchweitz, and F.~Meneguzzi, ``Identification of autism spectrum disorder using deep learning and the ABIDE dataset,'' \emph{NeuroImage: Clin.}, vol.~17, pp.~16--23, 2018.
-
-\bibitem{eslami2019asd}
-T.~Eslami, V.~Mirjalili, A.~Fong, A.~R. Laird, and F.~Saeed, ``ASD-DiagNet: A hybrid learning approach for detection of autism spectrum disorder using fMRI data,'' \emph{Front. Neuroinform.}, vol.~13, p.~70, Nov. 2019.
-
-\bibitem{zou20173d}
-G.~Zou, J.~Zheng, and X.~Huang, ``3D-CNN based classification of autism spectrum disorder using structural MRI,'' in \emph{Proc. IEEE Int. Conf. Bioinf. Biomed. (BIBM)}, 2017, pp.~1820--1824.
-
-\bibitem{sandler2018mobilenetv2}
-M.~Sandler, A.~Howard, M.~Zhu, A.~Zhmoginov, and L.-C. Chen, ``MobileNetV2: Inverted residuals and linear bottlenecks,'' in \emph{Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR)}, 2018, pp.~4510--4520.
-
 \bibitem{robins2014validation}
 D.~L. Robins, K.~Casagrande, M.~Barton, C.~M. Chen, T.~Dumont-Mathieu, and M.~A. Fein, ``Validation of the Modified Checklist for Autism in Toddlers, Revised with Follow-up (M-CHAT-R/F),'' \emph{Pediatrics}, vol.~133, no.~1, pp.~37--45, Jan. 2014.
 
@@ -464,6 +440,72 @@ National Institute for the Mentally Handicapped (NIMH), \emph{Indian Scale for A
 
 \bibitem{mukherjee2021indian}
 S.~B. Mukherjee, T.~Aneja, V.~Sharma, and R.~K. Paul, ``Indian Autism Screening Questionnaire: Validation for community screening,'' \emph{Indian Pediatr.}, vol.~58, no.~4, pp.~336--340, Apr. 2021.
+
+\bibitem{hazlett2017early}
+H.~C. Hazlett \emph{et al.}, ``Early brain development in infants at high risk for autism spectrum disorder,'' \emph{Nature}, vol.~542, no.~7641, pp.~348--351, Feb. 2017.
+
+\bibitem{shen2013early}
+M.~D. Shen \emph{et al.}, ``Early brain enlargement and elevated extra-axial fluid in infants who develop autism spectrum disorder,'' \emph{Brain}, vol.~136, no.~9, pp.~2825--2835, Sep. 2013.
+
+\bibitem{courchesne2001unusual}
+E.~Courchesne \emph{et al.}, ``Unusual brain growth patterns in early life in patients with autistic disorder: An MRI study,'' \emph{Neurology}, vol.~57, no.~2, pp.~245--254, Jul. 2001.
+
+\bibitem{herbert2004localization}
+M.~R. Herbert \emph{et al.}, ``Localization of white matter volume increases in autism and developmental language disorder,'' \emph{Ann. Neurol.}, vol.~55, no.~4, pp.~530--540, Apr. 2004.
+
+\bibitem{amaral2008neuroanatomy}
+D.~G. Amaral, C.~M. Schumann, and C.~W. Nordahl, ``Neuroanatomy of autism,'' \emph{Trends Neurosci.}, vol.~31, no.~3, pp.~137--145, Mar. 2008.
+
+\bibitem{ecker2010investigating}
+C.~Ecker \emph{et al.}, ``Investigating the predictive value of whole-brain structural MR scans in autism spectrum disorder: A pattern classification approach,'' \emph{NeuroImage}, vol.~49, no.~1, pp.~44--56, Jan. 2010.
+
+\bibitem{dimartino2014autism}
+A.~Di~Martino \emph{et al.}, ``The Autism Brain Imaging Data Exchange: Towards a large-scale evaluation of the intrinsic brain architecture in autism,'' \emph{Mol. Psychiatry}, vol.~19, no.~6, pp.~659--667, Jun. 2014.
+
+\bibitem{dimartino2017abide2}
+A.~Di~Martino \emph{et al.}, ``Enhancing studies of the connectome in autism using the Autism Brain Imaging Data Exchange II,'' \emph{Sci. Data}, vol.~4, Art. no.~170010, Mar. 2017.
+
+\bibitem{nielsen2013multisite}
+J.~A. Nielsen \emph{et al.}, ``Multisite functional connectivity MRI classification of autism: ABIDE results,'' \emph{Front. Hum. Neurosci.}, vol.~7, Art. no.~599, Sep. 2013.
+
+\bibitem{abraham2017deriving}
+A.~Abraham, M.~P. Milham, A.~Di~Martino, R.~C. Craddock, D.~Samaras, B.~Thirion, and G.~Varoquaux, ``Deriving reproducible biomarkers from multi-site resting-state data: An autism-classification challenge,'' \emph{NeuroImage}, vol.~147, pp.~736--745, Feb. 2017.
+
+\bibitem{fortin2018harmonization}
+J.-P. Fortin \emph{et al.}, ``Harmonization of cortical thickness measurements across scanners and sites,'' \emph{NeuroImage}, vol.~167, pp.~104--120, Feb. 2018.
+
+\bibitem{heinsfeld2018identification}
+A.~S. Heinsfeld, A.~R. Franco, R.~C. Craddock, A.~Buchweitz, and F.~Meneguzzi, ``Identification of autism spectrum disorder using deep learning and the ABIDE dataset,'' \emph{NeuroImage: Clin.}, vol.~17, pp.~16--23, 2018.
+
+\bibitem{eslami2019asd}
+T.~Eslami, V.~Mirjalili, A.~Fong, A.~R. Laird, and F.~Saeed, ``ASD-DiagNet: A hybrid learning approach for detection of autism spectrum disorder using fMRI data,'' \emph{Front. Neuroinform.}, vol.~13, Art. no.~70, Nov. 2019.
+
+\bibitem{zou20173d}
+G.~Zou, J.~Zheng, and X.~Huang, ``3D-CNN based classification of autism spectrum disorder using structural MRI,'' in \emph{Proc. IEEE Int. Conf. Bioinf. Biomed. (BIBM)}, Kansas City, MO, USA, 2017, pp.~1820--1824.
+
+\bibitem{aghdam2019analysis}
+M.~A. Aghdam, A.~Sharifi, and M.~M. Pedram, ``Combination of deep neural network with whale optimization algorithm for autism spectrum disorder detection using high-dimensional MRI data,'' \emph{Comput. Biol. Med.}, vol.~101, pp.~124--135, Oct. 2018.
+
+\bibitem{sharif2021novel}
+W.~Sharif and M.~U.~G. Khan, ``A novel framework for autism spectrum disorder detection using deep convolutional neural network,'' \emph{IEEE Access}, vol.~9, pp.~159987--159997, 2021.
+
+\bibitem{parisot2018disease}
+S.~Parisot \emph{et al.}, ``Disease prediction using graph convolutional networks: Application to Autism Spectrum Disorder and Alzheimer's Disease,'' \emph{Med. Image Anal.}, vol.~48, pp.~117--130, Aug. 2018.
+
+\bibitem{khodatars2021deep}
+M.~Khodatars \emph{et al.}, ``Deep learning for neuroimaging-based diagnosis and rehabilitation of autism spectrum disorder: A review,'' \emph{Artif. Intell. Med.}, vol.~115, Art. no.~102073, May 2021.
+
+\bibitem{roth2015deeporgan}
+H.~R. Roth \emph{et al.}, ``DeepOrgan: Multi-level deep convolutional networks for automated pancreas segmentation,'' in \emph{Proc. Int. Conf. Med. Image Comput. Comput.-Assist. Interv. (MICCAI)}, Munich, Germany: Springer, 2015, pp.~556--564.
+
+\bibitem{sandler2018mobilenetv2}
+M.~Sandler, A.~Howard, M.~Zhu, A.~Zhmoginov, and L.-C. Chen, ``MobileNetV2: Inverted residuals and linear bottlenecks,'' in \emph{Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR)}, Salt Lake City, UT, USA, 2018, pp.~4510--4520.
+
+\bibitem{he2016deep}
+K.~He, X.~Zhang, S.~Ren, and J.~Sun, ``Deep residual learning for image recognition,'' in \emph{Proc. IEEE Conf. Comput. Vis. Pattern Recognit. (CVPR)}, Las Vegas, NV, USA, 2016, pp.~770--778.
+
+\bibitem{esteva2017dermatologist}
+A.~Esteva \emph{et al.}, ``Dermatologist-level classification of skin cancer with deep neural networks,'' \emph{Nature}, vol.~542, no.~7639, pp.~115--118, Feb. 2017.
 
 \bibitem{topol2019high}
 E.~J. Topol, ``High-performance medicine: The convergence of human and artificial intelligence,'' \emph{Nat. Med.}, vol.~25, no.~1, pp.~44--56, Jan. 2019.
