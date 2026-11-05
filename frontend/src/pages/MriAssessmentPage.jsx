@@ -7,7 +7,6 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
   const [preflightInfo, setPreflightInfo] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [loadingSample, setLoadingSample] = useState(null);
   const [pipelineStage, setPipelineStage] = useState(1);
   const [uploadResult, setUploadResult] = useState(() => activeMriResult || null);
   const [error, setError] = useState('');
@@ -75,20 +74,6 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
     }
   };
 
-  // 1-Click Demo Sample Scan Loader (Guarantees every button works!)
-  const handleLoadSample = async (filename, label) => {
-    setError('');
-    setLoadingSample(filename);
-    try {
-      const fileObj = await api.loadSampleScanAsFile(filename);
-      handleFile(fileObj);
-    } catch (err) {
-      setError(`Could not load demo sample scan: ${err.message}`);
-    } finally {
-      setLoadingSample(null);
-    }
-  };
-
   // Trigger file picker with specific extension filter
   const openFilePicker = (specificAccept = '.nii,.nii.gz,.png,.jpg,.jpeg') => {
     setAcceptFilter(specificAccept);
@@ -124,7 +109,7 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
   const handleUpload = async (e) => {
     if (e) e.preventDefault();
     if (!selectedFile) {
-      setError('Please select an MRI scan from your device or click one of the Sample Scans below to analyze.');
+      setError('Please select an MRI scan file (.nii, .nii.gz, .png, .jpg, .jpeg) from your device to analyze.');
       return;
     }
 
@@ -186,51 +171,6 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
             </p>
           </div>
           <span className="badge badge-success">Ingestion Engine Ready</span>
-        </div>
-
-        {/* 1-Click Interactive Demo Scans Bar */}
-        <div style={{
-          background: '#f0f9ff',
-          border: '1px solid #bae6fd',
-          borderRadius: 'var(--radius-lg)',
-          padding: '16px 20px',
-          marginBottom: '20px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '12px'
-        }}>
-          <div>
-            <strong style={{ fontSize: '0.94rem', color: '#0369a1', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span>🧪</span> Instant 1-Click Clinical Test Scans:
-            </strong>
-            <p style={{ margin: '2px 0 0 0', fontSize: '0.8rem', color: '#0284c7' }}>
-              No MRI on your machine? Click below to immediately load and analyze verified scans.
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              className="btn btn-primary"
-              style={{ padding: '8px 16px', fontSize: '0.84rem' }}
-              onClick={() => handleLoadSample('sample_asd_28802.png', 'Sample ASD Scan (Subject 28802)')}
-              disabled={loadingSample !== null || uploading}
-            >
-              {loadingSample === 'sample_asd_28802.png' ? 'Loading ASD Scan...' : '🧠 Load Sample ASD Scan'}
-            </button>
-
-            <button
-              type="button"
-              className="btn btn-secondary"
-              style={{ padding: '8px 16px', fontSize: '0.84rem' }}
-              onClick={() => handleLoadSample('sample_control_28749.png', 'Sample Control Scan (Subject 28749)')}
-              disabled={loadingSample !== null || uploading}
-            >
-              {loadingSample === 'sample_control_28749.png' ? 'Loading Control Scan...' : '✅ Load Sample Control Scan'}
-            </button>
-          </div>
         </div>
 
         {/* Drag and Drop Zone */}
