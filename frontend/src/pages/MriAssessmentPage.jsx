@@ -19,10 +19,6 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
   const [patientAge, setPatientAge] = useState(() => (user?.age ? String(user.age) : ''));
   const [clinicalNotes, setClinicalNotes] = useState('');
 
-  // Explainable AI (Grad-CAM) Visual State
-  const [xaiMode, setXaiMode] = useState('overlay'); // 'overlay', 'heatmap', 'raw', 'compare'
-  const [xaiOpacity, setXaiOpacity] = useState(40);
-
   useEffect(() => {
     if (activeMriResult && !uploadResult) {
       setUploadResult(activeMriResult);
@@ -526,253 +522,63 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
             </div>
           )}
 
-          {/* Explainable AI: Grad-CAM Neural Attention Maps */}
+          {/* Explainable AI: Grad-CAM Heatmap */}
           {uploadResult.explainable_ai && (
-            <div style={{
-              background: '#0b1329',
-              color: '#ffffff',
-              borderRadius: 'var(--radius-lg)',
-              padding: '24px',
-              marginBottom: '22px',
-              border: '1px solid #1e293b',
-              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)'
-            }}>
-              {/* Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '14px' }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '1.4rem' }}>🧠</span>
-                    <h4 style={{ margin: 0, fontSize: '1.18rem', fontWeight: 800, color: '#38bdf8', letterSpacing: '-0.01em' }}>
-                      Explainable AI (XAI): Grad-CAM Neural Attention Mapping
-                    </h4>
-                  </div>
-                  <p style={{ margin: '4px 0 0 0', fontSize: '0.82rem', color: '#94a3b8' }}>
-                    Visualizing the exact brain regions highlighted by the deep 2.5D CNN to make its diagnosis
-                  </p>
-                </div>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  <span className="badge badge-info" style={{ background: '#0284c7', color: '#ffffff', fontSize: '0.74rem' }}>
-                    Target Layer: conv4
-                  </span>
-                  <span className="badge badge-success" style={{ background: '#059669', color: '#ffffff', fontSize: '0.74rem' }}>
-                    Colormap: Turbo Radiance
-                  </span>
-                </div>
+            <div className="card" style={{ padding: '22px', marginBottom: '22px', textAlign: 'center' }}>
+              <h4 style={{ margin: '0 0 14px 0', fontSize: '1.05rem', fontWeight: 800, color: 'var(--navy)' }}>
+                Explainable AI (Grad-CAM Heatmap)
+              </h4>
+
+              {/* 1. Actual Heatmap */}
+              <div style={{
+                maxWidth: '300px',
+                margin: '0 auto 14px',
+                background: '#0a0f1d',
+                borderRadius: '8px',
+                padding: '8px',
+                border: '1px solid #1e293b'
+              }}>
+                <img
+                  src={uploadResult.explainable_ai.overlay_base64 || uploadResult.explainable_ai.overlay_url || uploadResult.explainable_ai.heatmap_base64 || uploadResult.explainable_ai.heatmap_url}
+                  alt="Grad-CAM Brain Heatmap"
+                  style={{ width: '100%', height: '260px', objectFit: 'contain', borderRadius: '4px', display: 'block' }}
+                />
               </div>
 
-              {/* Simple Words Explanation Card */}
+              {/* 2. Prediction & 3. Confidence */}
               <div style={{
-                background: 'rgba(56, 189, 248, 0.08)',
-                border: '1px solid rgba(56, 189, 248, 0.3)',
-                borderRadius: '10px',
-                padding: '14px 18px',
-                marginBottom: '18px'
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '24px',
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
+                padding: '8px 24px',
+                marginBottom: '12px'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                  <span style={{ fontSize: '1.2rem' }}>💡</span>
-                  <strong style={{ fontSize: '0.92rem', color: '#38bdf8' }}>
-                    What is this in simple words?
+                <div>
+                  <span style={{ fontSize: '0.78rem', color: '#64748b', display: 'block', fontWeight: 600, textTransform: 'uppercase' }}>
+                    Prediction
+                  </span>
+                  <strong style={{ fontSize: '1.1rem', color: isAsd ? '#dc2626' : '#16a34a' }}>
+                    {isAsd ? 'Autism' : 'Non Autism'}
                   </strong>
                 </div>
-                <p style={{ margin: 0, fontSize: '0.84rem', color: '#e2e8f0', lineHeight: 1.55 }}>
-                  Normally, AI is a <strong>"black box"</strong>—it makes a prediction without showing its work.
-                  <strong> Explainable AI (Grad-CAM)</strong> acts like a <strong>digital highlighter</strong> on the brain MRI.
-                  It lights up the exact areas the AI focused on to decide between <em>Autism</em> and <em>Non-Autism</em>,
-                  so doctors and families can verify that the decision is based on real brain patterns, not an unexplained guess.
-                </p>
-
-                {/* Color Legend */}
-                <div style={{
-                  display: 'flex',
-                  gap: '16px',
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                  marginTop: '12px',
-                  paddingTop: '10px',
-                  borderTop: '1px solid rgba(255,255,255,0.08)',
-                  fontSize: '0.8rem'
-                }}>
-                  <span style={{ color: '#94a3b8', fontWeight: 700 }}>Color Meaning:</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#fca5a5' }}>
-                    <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ef4444', display: 'inline-block', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
-                    <strong>Red / Orange:</strong> High AI Focus (Main Biomarker Area)
+                <div style={{ width: '1px', height: '28px', background: '#cbd5e1' }} />
+                <div>
+                  <span style={{ fontSize: '0.78rem', color: '#64748b', display: 'block', fontWeight: 600, textTransform: 'uppercase' }}>
+                    Confidence
                   </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#fef08a' }}>
-                    <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#eab308', display: 'inline-block' }} />
-                    <strong>Yellow / Green:</strong> Moderate Notice
-                  </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#93c5fd' }}>
-                    <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#3b82f6', display: 'inline-block' }} />
-                    <strong>Blue / Dark:</strong> Normal Background (Ignored)
-                  </span>
+                  <strong style={{ fontSize: '1.1rem', color: 'var(--navy)' }}>
+                    {confidencePercent}%
+                  </strong>
                 </div>
               </div>
 
-              {/* View Mode Toolbar */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px', background: 'rgba(255,255,255,0.05)', padding: '10px 14px', borderRadius: '8px' }}>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {[
-                    { id: 'overlay', label: '🔮 Superimposed Overlay' },
-                    { id: 'heatmap', label: '🔥 Pure Heatmap' },
-                    { id: 'raw', label: '🖼️ Raw MRI Slice' },
-                    { id: 'compare', label: '⚖️ Side-by-Side Comparison' },
-                  ].map((m) => (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onClick={() => setXaiMode(m.id)}
-                      style={{
-                        padding: '6px 14px',
-                        fontSize: '0.82rem',
-                        fontWeight: 700,
-                        borderRadius: '6px',
-                        border: xaiMode === m.id ? '2px solid #38bdf8' : '1px solid #334155',
-                        background: xaiMode === m.id ? '#0284c7' : 'transparent',
-                        color: xaiMode === m.id ? '#ffffff' : '#cbd5e1',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      {m.label}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Opacity Slider for Overlay Mode */}
-                {xaiMode === 'overlay' && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.8rem', color: '#cbd5e1' }}>
-                    <span>Heatmap Opacity: <strong>{xaiOpacity}%</strong></span>
-                    <input
-                      type="range"
-                      min="10"
-                      max="90"
-                      value={xaiOpacity}
-                      onChange={(e) => setXaiOpacity(Number(e.target.value))}
-                      style={{ width: '100px', cursor: 'pointer' }}
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* Main Image Display */}
-              <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                {xaiMode === 'compare' ? (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', maxWidth: '640px', margin: '0 auto' }}>
-                    <div style={{ background: '#000000', borderRadius: '8px', padding: '10px', border: '1px solid #334155' }}>
-                      <img
-                        src={previewUrl || uploadResult.explainable_ai.overlay_url}
-                        alt="Raw MRI Slice"
-                        style={{ width: '100%', height: '240px', objectFit: 'contain', borderRadius: '4px' }}
-                      />
-                      <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: '6px', fontWeight: 600 }}>
-                        Raw Structural Brain MRI
-                      </div>
-                    </div>
-
-                    <div style={{ background: '#000000', borderRadius: '8px', padding: '10px', border: '1px solid #334155' }}>
-                      <img
-                        src={uploadResult.explainable_ai.overlay_base64 || uploadResult.explainable_ai.overlay_url}
-                        alt="Grad-CAM Overlay"
-                        style={{ width: '100%', height: '240px', objectFit: 'contain', borderRadius: '4px' }}
-                      />
-                      <div style={{ fontSize: '0.78rem', color: '#38bdf8', marginTop: '6px', fontWeight: 700 }}>
-                        Grad-CAM Saliency Overlay (conv4)
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ maxWidth: '380px', margin: '0 auto', background: '#000000', borderRadius: '10px', padding: '12px', border: '1px solid #334155', position: 'relative' }}>
-                    {xaiMode === 'raw' && (
-                      <img
-                        src={previewUrl || uploadResult.explainable_ai.overlay_url}
-                        alt="Raw MRI Slice"
-                        style={{ width: '100%', height: '280px', objectFit: 'contain', borderRadius: '6px' }}
-                      />
-                    )}
-                    {xaiMode === 'heatmap' && (
-                      <img
-                        src={uploadResult.explainable_ai.heatmap_base64 || uploadResult.explainable_ai.heatmap_url}
-                        alt="Pure Grad-CAM Heatmap"
-                        style={{ width: '100%', height: '280px', objectFit: 'contain', borderRadius: '6px' }}
-                      />
-                    )}
-                    {xaiMode === 'overlay' && (
-                      <div style={{ position: 'relative', width: '100%', height: '280px' }}>
-                        {/* Base MRI */}
-                        <img
-                          src={previewUrl || uploadResult.explainable_ai.overlay_url}
-                          alt="Base MRI"
-                          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'contain', borderRadius: '6px' }}
-                        />
-                        {/* Blended Heatmap */}
-                        <img
-                          src={uploadResult.explainable_ai.heatmap_base64 || uploadResult.explainable_ai.heatmap_url}
-                          alt="Grad-CAM Heatmap"
-                          style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'contain',
-                            borderRadius: '6px',
-                            opacity: xaiOpacity / 100,
-                            mixBlendMode: 'screen',
-                          }}
-                        />
-                      </div>
-                    )}
-                    <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: '8px' }}>
-                      {xaiMode === 'overlay' && `Composite View (Blend: ${100 - xaiOpacity}% MRI / ${xaiOpacity}% Grad-CAM)`}
-                      {xaiMode === 'heatmap' && 'Pure Class Activation Energy Distribution (Turbo Colormap)'}
-                      {xaiMode === 'raw' && 'Original Structural Input Slice'}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Anatomical Regions of Attention */}
-              {uploadResult.explainable_ai.top_activated_regions && uploadResult.explainable_ai.top_activated_regions.length > 0 && (
-                <div style={{ marginTop: '18px' }}>
-                  <h5 style={{ margin: '0 0 10px 0', fontSize: '0.88rem', color: '#e2e8f0', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    📍 Where Did the AI Look? (Key Brain Areas Driving the Diagnosis)
-                  </h5>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
-                    {uploadResult.explainable_ai.top_activated_regions.map((region, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          background: 'rgba(255, 255, 255, 0.04)',
-                          border: '1px solid #334155',
-                          borderRadius: '8px',
-                          padding: '12px 14px'
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                          <strong style={{ fontSize: '0.84rem', color: '#38bdf8' }}>{region.name}</strong>
-                          <span style={{ fontSize: '0.76rem', background: '#0369a1', color: '#ffffff', padding: '2px 8px', borderRadius: '999px', fontWeight: 700 }}>
-                            {region.activation_pct}% Focus
-                          </span>
-                        </div>
-                        <div style={{ height: '6px', background: '#1e293b', borderRadius: '999px', overflow: 'hidden', marginBottom: '8px' }}>
-                          <div style={{ width: `${region.activation_pct}%`, height: '100%', background: 'linear-gradient(90deg, #38bdf8, #f59e0b)', borderRadius: '999px' }} />
-                        </div>
-                        <div style={{ fontSize: '0.74rem', color: '#94a3b8', lineHeight: 1.4 }}>
-                          {region.clinical_role}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Clinical Interpretation Note in Simple Words */}
-              {uploadResult.explainable_ai.clinical_interpretation && (
-                <div style={{ marginTop: '16px', background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '8px', padding: '12px 16px', fontSize: '0.82rem', color: '#bae6fd', lineHeight: 1.5 }}>
-                  <strong>🩺 Summary in Simple Words: </strong>
-                  {uploadResult.explainable_ai.clinical_interpretation}
-                </div>
-              )}
+              {/* 4. One Line Explanation */}
+              <p style={{ margin: 0, fontSize: '0.86rem', color: '#475569' }}>
+                Grad-CAM heatmap highlights the key brain regions that influenced this prediction.
+              </p>
             </div>
           )}
 

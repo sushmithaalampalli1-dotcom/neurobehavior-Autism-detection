@@ -435,16 +435,16 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
                     </div>
                   </div>
 
-                  {/* Grad-CAM Saliency Overlay */}
+                  {/* Grad-CAM Heatmap */}
                   {activeMriResult?.explainable_ai && (
                     <div style={{ textAlign: 'center', border: '1px solid #38bdf8', borderRadius: '6px', padding: '6px', background: '#0b1329' }}>
                       <img
                         src={activeMriResult.explainable_ai.overlay_base64 || activeMriResult.explainable_ai.overlay_url}
-                        alt="Grad-CAM Saliency Overlay"
+                        alt="Grad-CAM Heatmap"
                         style={{ width: '100px', height: '100px', objectFit: 'contain', display: 'block', margin: '0 auto', borderRadius: '4px' }}
                       />
                       <div style={{ fontSize: '0.68rem', color: '#38bdf8', marginTop: '4px', fontWeight: 700 }}>
-                        Grad-CAM Saliency
+                        Grad-CAM Heatmap
                       </div>
                     </div>
                   )}
@@ -500,19 +500,10 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
                   </table>
                 </div>
 
-                {/* Regional activation chips if explainable_ai is available */}
-                {activeMriResult?.explainable_ai?.top_activated_regions && (
-                  <div style={{ marginTop: '10px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 14px', fontSize: '0.78rem' }}>
-                    <div style={{ fontWeight: 700, color: '#1e3a8a', marginBottom: '6px' }}>
-                      🧠 Explainable AI Biomarker Focus (Grad-CAM conv4 Attention):
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      {activeMriResult.explainable_ai.top_activated_regions.map((reg, rIdx) => (
-                        <span key={rIdx} style={{ background: '#e0f2fe', color: '#0369a1', padding: '3px 10px', borderRadius: '4px', fontWeight: 600 }}>
-                          {reg.name}: <strong>{reg.activation_pct}%</strong>
-                        </span>
-                      ))}
-                    </div>
+                {/* Explainable AI Note */}
+                {activeMriResult?.explainable_ai && (
+                  <div style={{ marginTop: '10px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '8px 12px', fontSize: '0.78rem', color: '#475569' }}>
+                    <strong>Explainable AI (Grad-CAM):</strong> Highlights the key brain regions that influenced this prediction.
                   </div>
                 )}
               </div>
