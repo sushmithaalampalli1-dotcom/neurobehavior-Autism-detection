@@ -110,12 +110,15 @@ export default function QuestionnairePage({ user, navigate, activeQuestionnaireR
       <div className="card">
         <div className="card-header">
           <div>
-            <h2 className="card-title">Questionnaire Analysis (IASQ 10-Item Protocol)</h2>
+            <h2 className="card-title">Questionnaire Analysis (IASQ 10-Item Protocol / ಐ.ಎ.ಎಸ್.ಕ್ಯೂ ಪ್ರಶ್ನಾವಳಿ)</h2>
             <p className="card-subtitle">
-              Standardized behavioral observation tool evaluating social communication and developmental milestones (PMC8062015)
+              Standardized behavioral observation tool with Kannada translations (PMC8062015 / ಕನ್ನಡ ಅನುವಾದ ಸಹಿತ)
             </p>
           </div>
-          <span className="badge badge-success">Protocol Active</span>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <span className="badge badge-info">🌐 English &amp; ಕನ್ನಡ</span>
+            <span className="badge badge-success">Protocol Active</span>
+          </div>
         </div>
       </div>
 
@@ -210,7 +213,7 @@ export default function QuestionnairePage({ user, navigate, activeQuestionnaireR
                         <td>{item.title}</td>
                         <td>
                           <span className={`badge ${item.response === 'Yes' ? 'badge-warning' : 'badge-success'}`}>
-                            {item.response}
+                            {item.response === 'Yes' ? 'Yes (ಹೌದು)' : 'No (ಇಲ್ಲ)'}
                           </span>
                         </td>
                         <td><strong>{item.points}</strong></td>
@@ -360,12 +363,13 @@ export default function QuestionnairePage({ user, navigate, activeQuestionnaireR
                           style={{
                             padding: '8px 18px',
                             fontSize: '0.86rem',
+                            fontWeight: 600,
                             background: currentVal === true ? '#dc2626' : undefined,
                             borderColor: currentVal === true ? '#dc2626' : undefined
                           }}
                           onClick={() => handleAnswerChange(item.id, true)}
                         >
-                          Yes (1)
+                          Yes (ಹೌದು) (1)
                         </button>
                         <button
                           type="button"
@@ -373,12 +377,13 @@ export default function QuestionnairePage({ user, navigate, activeQuestionnaireR
                           style={{
                             padding: '8px 18px',
                             fontSize: '0.86rem',
+                            fontWeight: 600,
                             background: currentVal === false ? '#16a34a' : undefined,
                             borderColor: currentVal === false ? '#16a34a' : undefined
                           }}
                           onClick={() => handleAnswerChange(item.id, false)}
                         >
-                          No (0)
+                          No (ಇಲ್ಲ) (0)
                         </button>
                       </div>
                     </div>
