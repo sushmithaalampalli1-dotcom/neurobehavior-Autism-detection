@@ -19,7 +19,7 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
 
   // Register demographic & parent/guardian fields
   const [fullName, setFullName] = useState('');
-  const [age, setAge] = useState('21.0');
+  const [age, setAge] = useState('');
   const [gender, setGender] = useState('Female');
   const [bloodGroup, setBloodGroup] = useState('B-');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -469,7 +469,7 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
                     </label>
                     <select
                       id="regGender"
-                      className="form-input is-valid"
+                      className="form-input"
                       value={gender}
                       onChange={(e) => setGender(e.target.value)}
                       required
@@ -486,7 +486,7 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
                     </label>
                     <select
                       id="regBloodGroup"
-                      className="form-input is-valid"
+                      className="form-input"
                       value={bloodGroup}
                       onChange={(e) => setBloodGroup(e.target.value)}
                       required
@@ -566,7 +566,7 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
                       </label>
                       <select
                         id="parentRelation"
-                        className="form-input is-valid"
+                        className="form-input"
                         value={parentRelation}
                         onChange={(e) => setParentRelation(e.target.value)}
                         required
@@ -611,7 +611,7 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
                 id="authEmail"
                 type="email"
                 className={`form-input ${touched.email ? (emailVal.isValid ? 'is-valid' : 'is-invalid') : ''}`}
-                placeholder="name@example.com"
+                placeholder="e.g. patient@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onBlur={() => markTouched('email')}
@@ -731,7 +731,7 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
                     id="resetEmailInput"
                     type="email"
                     className="form-input"
-                    placeholder="name@example.com"
+                    placeholder="e.g. patient@example.com"
                     value={resetEmail}
                     onChange={(e) => setResetEmail(e.target.value)}
                     required
@@ -776,7 +776,7 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
                     type="text"
                     maxLength="6"
                     className="form-input"
-                    placeholder="Enter 6-digit code"
+                    placeholder="e.g. 123456"
                     value={verificationCode}
                     onChange={(e) => setVerificationCode(e.target.value)}
                     style={{ letterSpacing: '4px', fontSize: '1.1rem', fontWeight: 700, textAlign: 'center' }}

@@ -16,7 +16,7 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
 
   // Optional Patient Clinical Context
   const [patientMrn, setPatientMrn] = useState('');
-  const [patientAge, setPatientAge] = useState(() => (user?.age ? String(user.age) : '5.0'));
+  const [patientAge, setPatientAge] = useState(() => (user?.age ? String(user.age) : ''));
   const [clinicalNotes, setClinicalNotes] = useState('');
 
   useEffect(() => {

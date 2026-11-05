@@ -4,7 +4,7 @@ import { validateAge, validateIasqResponses } from '../utils/validators';
 
 export default function QuestionnairePage({ user, navigate, activeQuestionnaireResult, onQuestionnaireCompleted }) {
   const [schema, setSchema] = useState(null);
-  const [subjectAge, setSubjectAge] = useState(() => (user?.age ? String(user.age) : '5.0'));
+  const [subjectAge, setSubjectAge] = useState(() => (user?.age ? String(user.age) : ''));
   const [informant, setInformant] = useState('Parent / Guardian');
   const [clinicalConcerns, setClinicalConcerns] = useState('');
   const [answers, setAnswers] = useState({});

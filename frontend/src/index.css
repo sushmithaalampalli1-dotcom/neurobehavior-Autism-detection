@@ -491,6 +491,48 @@ a:hover {
   box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
 }
 
+/* Light, subtle placeholder hints so examples (e.g. ...) are never mistaken for pre-filled text */
+::placeholder {
+  color: #94a3b8 !important;
+  opacity: 0.65 !important;
+  font-weight: 400 !important;
+}
+
+::-webkit-input-placeholder {
+  color: #94a3b8 !important;
+  opacity: 0.65 !important;
+  font-weight: 400 !important;
+}
+
+::-moz-placeholder {
+  color: #94a3b8 !important;
+  opacity: 0.65 !important;
+  font-weight: 400 !important;
+}
+
+:-ms-input-placeholder {
+  color: #94a3b8 !important;
+  opacity: 0.65 !important;
+  font-weight: 400 !important;
+}
+
+.form-input::placeholder,
+.form-select::placeholder,
+.form-textarea::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8 !important;
+  opacity: 0.65 !important;
+  font-weight: 400 !important;
+}
+
+.form-input:focus::placeholder,
+.form-textarea:focus::placeholder,
+input:focus::placeholder,
+textarea:focus::placeholder {
+  opacity: 0.4 !important;
+}
+
 .form-help {
   font-size: 0.78rem;
   color: var(--slate-500);
