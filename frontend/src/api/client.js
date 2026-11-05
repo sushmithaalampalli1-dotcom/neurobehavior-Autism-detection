@@ -164,6 +164,17 @@ export const api = {
     return request('/mri/status');
   },
 
+  async getSampleScans() {
+    return request('/mri/samples');
+  },
+
+  async loadSampleScanAsFile(filename) {
+    const res = await fetch(`/api/mri/sample/${filename}`);
+    if (!res.ok) throw new Error(`Could not load sample scan: ${res.statusText}`);
+    const blob = await res.blob();
+    return new File([blob], filename, { type: 'image/png' });
+  },
+
   async uploadMriScan(formData) {
     return request('/mri/upload', {
       method: 'POST',

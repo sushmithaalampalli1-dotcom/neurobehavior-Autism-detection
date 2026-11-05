@@ -7,11 +7,13 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
   const [preflightInfo, setPreflightInfo] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [loadingSample, setLoadingSample] = useState(null);
   const [pipelineStage, setPipelineStage] = useState(1);
   const [uploadResult, setUploadResult] = useState(() => activeMriResult || null);
   const [error, setError] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef(null);
+  const [acceptFilter, setAcceptFilter] = useState('.nii,.nii.gz,.png,.jpg,.jpeg');
 
   // Optional Patient Clinical Context
   const [patientMrn, setPatientMrn] = useState('');
@@ -73,6 +75,30 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
     }
   };
 
+  // 1-Click Demo Sample Scan Loader (Guarantees every button works!)
+  const handleLoadSample = async (filename, label) => {
+    setError('');
+    setLoadingSample(filename);
+    try {
+      const fileObj = await api.loadSampleScanAsFile(filename);
+      handleFile(fileObj);
+    } catch (err) {
+      setError(`Could not load demo sample scan: ${err.message}`);
+    } finally {
+      setLoadingSample(null);
+    }
+  };
+
+  // Trigger file picker with specific extension filter
+  const openFilePicker = (specificAccept = '.nii,.nii.gz,.png,.jpg,.jpeg') => {
+    setAcceptFilter(specificAccept);
+    setTimeout(() => {
+      if (fileInputRef.current) {
+        fileInputRef.current.click();
+      }
+    }, 50);
+  };
+
   // Drag and Drop handlers
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -98,7 +124,7 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
   const handleUpload = async (e) => {
     if (e) e.preventDefault();
     if (!selectedFile) {
-      setError('Please select a brain MRI scan to analyze.');
+      setError('Please select an MRI scan from your device or click one of the Sample Scans below to analyze.');
       return;
     }
 
@@ -150,16 +176,61 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '26px' }} className="fade-in">
-      {/* Title Card: Autism Prediction as requested */}
+      {/* Title Card */}
       <div className="card">
         <div className="card-header">
           <div>
-            <h2 className="card-title">Autism Prediction & Scan Assessment</h2>
+            <h2 className="card-title">Autism Prediction &amp; Scan Assessment</h2>
             <p className="card-subtitle">
               Universal multi-format clinical neuroimaging ingestion and deep biomarker prediction
             </p>
           </div>
           <span className="badge badge-success">Ingestion Engine Ready</span>
+        </div>
+
+        {/* 1-Click Interactive Demo Scans Bar */}
+        <div style={{
+          background: '#f0f9ff',
+          border: '1px solid #bae6fd',
+          borderRadius: 'var(--radius-lg)',
+          padding: '16px 20px',
+          marginBottom: '20px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}>
+          <div>
+            <strong style={{ fontSize: '0.94rem', color: '#0369a1', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>🧪</span> Instant 1-Click Clinical Test Scans:
+            </strong>
+            <p style={{ margin: '2px 0 0 0', fontSize: '0.8rem', color: '#0284c7' }}>
+              No MRI on your machine? Click below to immediately load and analyze verified scans.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{ padding: '8px 16px', fontSize: '0.84rem' }}
+              onClick={() => handleLoadSample('sample_asd_28802.png', 'Sample ASD Scan (Subject 28802)')}
+              disabled={loadingSample !== null || uploading}
+            >
+              {loadingSample === 'sample_asd_28802.png' ? 'Loading ASD Scan...' : '🧠 Load Sample ASD Scan'}
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ padding: '8px 16px', fontSize: '0.84rem' }}
+              onClick={() => handleLoadSample('sample_control_28749.png', 'Sample Control Scan (Subject 28749)')}
+              disabled={loadingSample !== null || uploading}
+            >
+              {loadingSample === 'sample_control_28749.png' ? 'Loading Control Scan...' : '✅ Load Sample Control Scan'}
+            </button>
+          </div>
         </div>
 
         {/* Drag and Drop Zone */}
@@ -168,13 +239,12 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          onClick={() => fileInputRef.current && fileInputRef.current.click()}
         >
           <input
             ref={fileInputRef}
             id="mriFileInput"
             type="file"
-            accept=".nii,.nii.gz,.png,.jpg,.jpeg"
+            accept={acceptFilter}
             style={{ display: 'none' }}
             onChange={handleFileChange}
           />
@@ -191,24 +261,54 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
               </p>
             </div>
 
-            <button
-              type="button"
-              className="btn btn-primary"
-              style={{ marginTop: '6px', padding: '10px 24px', fontSize: '0.92rem' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                fileInputRef.current && fileInputRef.current.click();
-              }}
-            >
-              📁 Browse File from Device
-            </button>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '6px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                style={{ padding: '10px 24px', fontSize: '0.92rem' }}
+                onClick={() => openFilePicker('.nii,.nii.gz,.png,.jpg,.jpeg')}
+              >
+                📁 Select MRI Scan from Computer
+              </button>
 
-            <div style={{ display: 'flex', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
-              <span className="badge badge-standby">3D .NII</span>
-              <span className="badge badge-standby">3D .NII.GZ</span>
-              <span className="badge badge-standby">2D .PNG</span>
-              <span className="badge badge-standby">2D .JPG</span>
-              <span className="badge badge-standby">2D .JPEG</span>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ padding: '10px 18px', fontSize: '0.92rem' }}
+                onClick={handleUpload}
+                disabled={uploading}
+              >
+                {uploading ? 'Analyzing...' : 'Analyze Scan ➔'}
+              </button>
+            </div>
+
+            {/* Clickable Format Filter Buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '10px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.78rem', color: 'var(--slate-500)', fontWeight: 600 }}>Filter by Format:</span>
+              <button
+                type="button"
+                className="btn btn-outline"
+                style={{ padding: '3px 8px', fontSize: '0.72rem', borderRadius: '999px' }}
+                onClick={() => openFilePicker('.png')}
+              >
+                2D .PNG
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline"
+                style={{ padding: '3px 8px', fontSize: '0.72rem', borderRadius: '999px' }}
+                onClick={() => openFilePicker('.jpg,.jpeg')}
+              >
+                2D .JPEG
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline"
+                style={{ padding: '3px 8px', fontSize: '0.72rem', borderRadius: '999px' }}
+                onClick={() => openFilePicker('.nii,.nii.gz')}
+              >
+                3D .NII
+              </button>
             </div>
           </div>
         </div>
@@ -289,11 +389,11 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
             <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 {previewUrl ? (
-                  <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '2px solid var(--slate-300)', background: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: '52px', height: '52px', borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '2px solid var(--slate-300)', background: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <img src={previewUrl} alt="MRI Slice" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                   </div>
                 ) : (
-                  <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)', background: '#e0f2fe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem' }}>
+                  <div style={{ width: '52px', height: '52px', borderRadius: 'var(--radius-md)', background: '#e0f2fe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem' }}>
                     📦
                   </div>
                 )}
@@ -319,7 +419,7 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
                   disabled={uploading}
                   onClick={() => { setSelectedFile(null); setPreflightInfo(null); setPreviewUrl(null); setUploadResult(null); }}
                 >
-                  Clear
+                  Clear Scan
                 </button>
               </div>
             </div>

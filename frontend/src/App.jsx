@@ -235,17 +235,19 @@ export default function App() {
                 type="button"
                 className={`workflow-nav-btn ${currentRoute === 'mri' ? 'active' : ''}`}
                 onClick={() => navigate('mri')}
+                title="Navigate to Brain MRI Biomarker Screening"
               >
                 <span style={{ fontSize: '1.2rem' }}>🧠</span>
-                <span>MRI Analysis</span>
+                <span>MRI Analysis {currentRoute === 'mri' && <span style={{ fontSize: '0.72rem', opacity: 0.9, marginLeft: '6px', background: 'rgba(255,255,255,0.25)', padding: '2px 8px', borderRadius: '999px' }}>Active</span>}</span>
               </button>
               <button
                 type="button"
                 className={`workflow-nav-btn ${currentRoute === 'questionnaire' ? 'active' : ''}`}
                 onClick={() => navigate('questionnaire')}
+                title="Navigate to 10-Item IASQ Behavioral Screening"
               >
                 <span style={{ fontSize: '1.2rem' }}>📋</span>
-                <span>Questionnaire Analysis</span>
+                <span>Questionnaire Analysis {currentRoute === 'questionnaire' && <span style={{ fontSize: '0.72rem', opacity: 0.9, marginLeft: '6px', background: 'rgba(255,255,255,0.25)', padding: '2px 8px', borderRadius: '999px' }}>Active</span>}</span>
               </button>
             </div>
 
@@ -255,17 +257,19 @@ export default function App() {
                 type="button"
                 className={`workflow-nav-btn ${currentRoute === 'centres' ? 'active' : ''}`}
                 onClick={() => navigate('centres')}
+                title="Navigate to Location Based Healthcare Support Directory"
               >
                 <span style={{ fontSize: '1.2rem' }}>📍</span>
-                <span>Location Based Personalized Support</span>
+                <span>Location Based Personalized Support {currentRoute === 'centres' && <span style={{ fontSize: '0.72rem', opacity: 0.9, marginLeft: '6px', background: 'rgba(255,255,255,0.25)', padding: '2px 8px', borderRadius: '999px' }}>Active</span>}</span>
               </button>
               <button
                 type="button"
                 className={`workflow-nav-btn ${currentRoute === 'report' || currentRoute === 'results' ? 'active' : ''}`}
                 onClick={() => navigate('report')}
+                title="Navigate to Unified Clinical Assessment Report"
               >
                 <span style={{ fontSize: '1.2rem' }}>📄</span>
-                <span>Report</span>
+                <span>Report {(currentRoute === 'report' || currentRoute === 'results') && <span style={{ fontSize: '0.72rem', opacity: 0.9, marginLeft: '6px', background: 'rgba(255,255,255,0.25)', padding: '2px 8px', borderRadius: '999px' }}>Active</span>}</span>
               </button>
             </div>
           </div>
