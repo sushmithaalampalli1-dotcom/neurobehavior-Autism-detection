@@ -11,9 +11,9 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
 
   // Patient demographic fields matching authenticated profile
   const [patientName, setPatientName] = useState(() => user?.full_name || '');
-  const [patientAge, setPatientAge] = useState(() => (user?.age ? String(user.age) : '21.0'));
-  const [patientGender, setPatientGender] = useState(() => user?.gender || 'Female');
-  const [bloodGroup, setBloodGroup] = useState(() => user?.blood_group || 'B-');
+  const [patientAge, setPatientAge] = useState(() => (user?.age ? String(user.age) : ''));
+  const [patientGender, setPatientGender] = useState(() => user?.gender || '');
+  const [bloodGroup, setBloodGroup] = useState(() => user?.blood_group || '');
 
   useEffect(() => {
     loadAssessments();
@@ -40,59 +40,38 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
     }
   };
 
-  // Determine if viewing an active session assessment vs historical record
-  const hasActiveSession = Boolean(activeMriResult || activeQuestionnaireResult);
+  // Strictly display clinical assessment report ONLY when the user has actively uploaded/entered assessment data in this session!
+  // If the user has not run an assessment in this session, hasAssessment is strictly FALSE (shows empty report state).
+  // This ensures demo accounts, direct navigation, and fresh logins never show stale or demo MRI data.
+  const hasMri = Boolean(activeMriResult);
+  const hasQuestionnaire = Boolean(activeQuestionnaireResult);
+  const hasAssessment = hasMri || hasQuestionnaire;
 
-  // When active session exists, use ONLY what was actively submitted in this workflow!
-  // If activeQuestionnaireResult is present and activeMriResult is null -> hasMri is strictly FALSE!
-  // If activeMriResult is present and activeQuestionnaireResult is null -> hasQuestionnaire is strictly FALSE!
-  const hasMri = hasActiveSession
-    ? Boolean(activeMriResult)
-    : Boolean(assessments[0]?.assessment_type === 'mri' || assessments[0]?.assessment_type === 'multimodal');
-
-  const hasQuestionnaire = hasActiveSession
-    ? Boolean(activeQuestionnaireResult)
-    : Boolean(assessments[0]?.assessment_type === 'questionnaire' || assessments[0]?.assessment_type === 'iasq' || assessments[0]?.assessment_type === 'multimodal');
-
-  // Resolve MRI assessment data (only if hasMri is true)
-  const mriFilename = hasMri
-    ? (activeMriResult?.filename || (assessments[0]?.assessment_type === 'mri' ? assessments[0]?.mri_filename : null))
-    : null;
+  // Resolve MRI assessment data (strictly from active session)
+  const mriFilename = hasMri ? activeMriResult?.filename : null;
 
   const mriAsd = hasMri && Boolean(
     (activeMriResult?.prediction?.dx_group === 1) ||
     (activeMriResult?.prediction?.label?.toLowerCase().includes('autism')) ||
-    (activeMriResult?.prediction?.result?.toLowerCase().includes('autism')) ||
-    (assessments[0]?.assessment_type === 'mri' && assessments[0]?.predicted_dx_group === 1)
+    (activeMriResult?.prediction?.result?.toLowerCase().includes('autism'))
   );
 
-  const mriConfidence = hasMri
-    ? (activeMriResult?.prediction?.confidence ?? (assessments[0]?.assessment_type === 'mri' ? assessments[0]?.prediction_confidence : null))
-    : null;
+  const mriConfidence = hasMri ? activeMriResult?.prediction?.confidence : null;
   const mriConfidencePercent = mriConfidence !== null ? (Number(mriConfidence) * 100).toFixed(1) : null;
   const mriRawScore = mriConfidence !== null ? Number(mriConfidence).toFixed(4) : null;
 
-  // Resolve Questionnaire assessment data (only if hasQuestionnaire is true)
-  const questScore = hasQuestionnaire
-    ? (activeQuestionnaireResult?.score ??
-       (assessments[0]?.assessment_type !== 'mri' && assessments[0]?.prediction_confidence !== null && assessments[0]?.prediction_confidence !== undefined
-         ? Math.round(assessments[0].prediction_confidence * 10)
-         : null))
-    : null;
-
-  const hasAssessment = hasMri || hasQuestionnaire;
+  // Resolve Questionnaire assessment data (strictly from active session)
+  const questScore = hasQuestionnaire ? (activeQuestionnaireResult?.score ?? null) : null;
 
   const reportId = `NB-REP-2026-${(
-    (hasActiveSession ? (activeMriResult?.assessment_id || activeQuestionnaireResult?.assessment_id) : assessments[0]?.id) ||
+    (activeMriResult?.assessment_id || activeQuestionnaireResult?.assessment_id) ||
     (user?.id ? `USR${user.id}` : '001')
   )}`;
   const patientId = user?.id ? `NB-PAT-2026-${String(user.id).padStart(4, '0')}` : 'NB-PAT-2026-6A5F';
   const reportDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' IST';
 
   // Resolved MRI scan preview image (No dummy replacement)
-  const mriPreviewUrl = hasMri
-    ? (activeMriResult?.previewUrl || (mriFilename ? `/api/mri/file/${mriFilename}` : null))
-    : null;
+  const mriPreviewUrl = hasMri ? activeMriResult?.previewUrl : null;
 
   // Age & Guardian calculations
   const ageNum = parseFloat(patientAge) || 21.0;
@@ -245,9 +224,9 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '10px', fontSize: '0.84rem' }}>
               <div><strong>Patient Full Name:</strong> {user?.full_name || 'N/A'}</div>
               <div><strong>Patient ID:</strong> {patientId}</div>
-              <div><strong>Age:</strong> {user?.age ? `${user.age} Years` : `${patientAge} Years`}</div>
-              <div><strong>Gender:</strong> {user?.gender || patientGender}</div>
-              <div><strong>Blood Group:</strong> {user?.blood_group || bloodGroup}</div>
+              <div><strong>Age:</strong> {user?.age ? `${user.age} Years` : (patientAge ? `${patientAge} Years` : 'Unspecified')}</div>
+              <div><strong>Gender:</strong> {user?.gender || patientGender || 'Unspecified'}</div>
+              <div><strong>Blood Group:</strong> {user?.blood_group || bloodGroup || 'Unspecified'}</div>
               <div><strong>Account Status:</strong> <span className="badge badge-info" style={{ fontSize: '0.75rem' }}>Ready for Assessment</span></div>
             </div>
           </div>

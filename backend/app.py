@@ -149,17 +149,23 @@ def _run_db_migrations():
 
 
 def _seed_demo_personas():
-    """Seed synthetic demonstration accounts for college presentations."""
+    """Seed synthetic demonstration accounts for college presentations with clean assessment slate."""
     from backend.models.user import User
+    from backend.models.assessment import Assessment
     demo_users = [
         {"email": "patient@demo.neurobehavior.org", "name": "Demo Patient", "role": "patient", "pass": "password123"},
         {"email": "admin@demo.neurobehavior.org", "name": "System Administrator", "role": "admin", "pass": "admin123"},
     ]
     for d in demo_users:
-        if not User.query.filter_by(email=d["email"]).first():
+        u = User.query.filter_by(email=d["email"]).first()
+        if not u:
             u = User(full_name=d["name"], email=d["email"], role=d["role"])
             u.set_password(d["pass"])
             db.session.add(u)
+            db.session.flush()
+        # Ensure demo patient starts with an empty assessment slate so no stale MRI/report is shown
+        if u and u.role == "patient":
+            Assessment.query.filter_by(user_id=u.id).delete()
     db.session.commit()
 
 

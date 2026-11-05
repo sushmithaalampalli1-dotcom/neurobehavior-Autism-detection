@@ -20,8 +20,8 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
   // Register demographic & parent/guardian fields
   const [fullName, setFullName] = useState('');
   const [age, setAge] = useState('');
-  const [gender, setGender] = useState('Female');
-  const [bloodGroup, setBloodGroup] = useState('B-');
+  const [gender, setGender] = useState('');
+  const [bloodGroup, setBloodGroup] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
 
   // Parent / Guardian details for security and pediatric safety
@@ -73,6 +73,8 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
       setTouched({
         fullName: true,
         age: true,
+        gender: true,
+        bloodGroup: true,
         phoneNumber: true,
         parentName: true,
         parentPhone: true,
@@ -88,6 +90,14 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
       }
       if (!ageVal.isValid) {
         setError(ageVal.message);
+        return;
+      }
+      if (!gender) {
+        setError('Please select a gender for the patient.');
+        return;
+      }
+      if (!bloodGroup) {
+        setError('Please select a blood group for the patient.');
         return;
       }
       if (!phoneVal.isValid) {
@@ -469,15 +479,21 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
                     </label>
                     <select
                       id="regGender"
-                      className="form-input"
+                      className={`form-input ${touched.gender && !gender ? 'is-invalid' : ''}`}
                       value={gender}
                       onChange={(e) => setGender(e.target.value)}
+                      onBlur={() => markTouched('gender')}
+                      style={{ color: gender ? 'var(--navy)' : '#94a3b8' }}
                       required
                     >
-                      <option value="Female">Female</option>
-                      <option value="Male">Male</option>
-                      <option value="Other">Other</option>
+                      <option value="" disabled hidden>Select Gender</option>
+                      <option value="Female" style={{ color: 'var(--navy)' }}>Female</option>
+                      <option value="Male" style={{ color: 'var(--navy)' }}>Male</option>
+                      <option value="Other" style={{ color: 'var(--navy)' }}>Other</option>
                     </select>
+                    {touched.gender && !gender && (
+                      <div className="field-error-msg">⚠️ Please select a gender.</div>
+                    )}
                   </div>
 
                   <div>
@@ -486,20 +502,26 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
                     </label>
                     <select
                       id="regBloodGroup"
-                      className="form-input"
+                      className={`form-input ${touched.bloodGroup && !bloodGroup ? 'is-invalid' : ''}`}
                       value={bloodGroup}
                       onChange={(e) => setBloodGroup(e.target.value)}
+                      onBlur={() => markTouched('bloodGroup')}
+                      style={{ color: bloodGroup ? 'var(--navy)' : '#94a3b8' }}
                       required
                     >
-                      <option value="A+">A+</option>
-                      <option value="A-">A-</option>
-                      <option value="B+">B+</option>
-                      <option value="B-">B-</option>
-                      <option value="AB+">AB+</option>
-                      <option value="AB-">AB-</option>
-                      <option value="O+">O+</option>
-                      <option value="O-">O-</option>
+                      <option value="" disabled hidden>Select Blood Group</option>
+                      <option value="A+" style={{ color: 'var(--navy)' }}>A+</option>
+                      <option value="A-" style={{ color: 'var(--navy)' }}>A-</option>
+                      <option value="B+" style={{ color: 'var(--navy)' }}>B+</option>
+                      <option value="B-" style={{ color: 'var(--navy)' }}>B-</option>
+                      <option value="AB+" style={{ color: 'var(--navy)' }}>AB+</option>
+                      <option value="AB-" style={{ color: 'var(--navy)' }}>AB-</option>
+                      <option value="O+" style={{ color: 'var(--navy)' }}>O+</option>
+                      <option value="O-" style={{ color: 'var(--navy)' }}>O-</option>
                     </select>
+                    {touched.bloodGroup && !bloodGroup && (
+                      <div className="field-error-msg">⚠️ Please select a blood group.</div>
+                    )}
                   </div>
                 </div>
 
