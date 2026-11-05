@@ -538,7 +538,7 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
               boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)'
             }}>
               {/* Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '14px' }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '1.4rem' }}>🧠</span>
@@ -547,15 +547,63 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
                     </h4>
                   </div>
                   <p style={{ margin: '4px 0 0 0', fontSize: '0.82rem', color: '#94a3b8' }}>
-                    Gradient-weighted Class Activation Mapping highlighting deep 2.5D CNN convolutional activations (<code>conv4</code> layer)
+                    Visualizing the exact brain regions highlighted by the deep 2.5D CNN to make its diagnosis
                   </p>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   <span className="badge badge-info" style={{ background: '#0284c7', color: '#ffffff', fontSize: '0.74rem' }}>
-                    Layer: conv4 (28×28×64)
+                    Target Layer: conv4
                   </span>
                   <span className="badge badge-success" style={{ background: '#059669', color: '#ffffff', fontSize: '0.74rem' }}>
                     Colormap: Turbo Radiance
+                  </span>
+                </div>
+              </div>
+
+              {/* Simple Words Explanation Card */}
+              <div style={{
+                background: 'rgba(56, 189, 248, 0.08)',
+                border: '1px solid rgba(56, 189, 248, 0.3)',
+                borderRadius: '10px',
+                padding: '14px 18px',
+                marginBottom: '18px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '1.2rem' }}>💡</span>
+                  <strong style={{ fontSize: '0.92rem', color: '#38bdf8' }}>
+                    What is this in simple words?
+                  </strong>
+                </div>
+                <p style={{ margin: 0, fontSize: '0.84rem', color: '#e2e8f0', lineHeight: 1.55 }}>
+                  Normally, AI is a <strong>"black box"</strong>—it makes a prediction without showing its work.
+                  <strong> Explainable AI (Grad-CAM)</strong> acts like a <strong>digital highlighter</strong> on the brain MRI.
+                  It lights up the exact areas the AI focused on to decide between <em>Autism</em> and <em>Non-Autism</em>,
+                  so doctors and families can verify that the decision is based on real brain patterns, not an unexplained guess.
+                </p>
+
+                {/* Color Legend */}
+                <div style={{
+                  display: 'flex',
+                  gap: '16px',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  marginTop: '12px',
+                  paddingTop: '10px',
+                  borderTop: '1px solid rgba(255,255,255,0.08)',
+                  fontSize: '0.8rem'
+                }}>
+                  <span style={{ color: '#94a3b8', fontWeight: 700 }}>Color Meaning:</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#fca5a5' }}>
+                    <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ef4444', display: 'inline-block', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
+                    <strong>Red / Orange:</strong> High AI Focus (Main Biomarker Area)
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#fef08a' }}>
+                    <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#eab308', display: 'inline-block' }} />
+                    <strong>Yellow / Green:</strong> Moderate Notice
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#93c5fd' }}>
+                    <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#3b82f6', display: 'inline-block' }} />
+                    <strong>Blue / Dark:</strong> Normal Background (Ignored)
                   </span>
                 </div>
               </div>
@@ -687,7 +735,7 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
               {uploadResult.explainable_ai.top_activated_regions && uploadResult.explainable_ai.top_activated_regions.length > 0 && (
                 <div style={{ marginTop: '18px' }}>
                   <h5 style={{ margin: '0 0 10px 0', fontSize: '0.88rem', color: '#e2e8f0', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    📍 Top Activated Neuroanatomical Regions (Biomarker Saliency Focus)
+                    📍 Where Did the AI Look? (Key Brain Areas Driving the Diagnosis)
                   </h5>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
                     {uploadResult.explainable_ai.top_activated_regions.map((region, idx) => (
@@ -718,10 +766,10 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
                 </div>
               )}
 
-              {/* Clinical Interpretation Note */}
+              {/* Clinical Interpretation Note in Simple Words */}
               {uploadResult.explainable_ai.clinical_interpretation && (
                 <div style={{ marginTop: '16px', background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '8px', padding: '12px 16px', fontSize: '0.82rem', color: '#bae6fd', lineHeight: 1.5 }}>
-                  <strong>🩺 Explainable AI Interpretation: </strong>
+                  <strong>🩺 Summary in Simple Words: </strong>
                   {uploadResult.explainable_ai.clinical_interpretation}
                 </div>
               )}

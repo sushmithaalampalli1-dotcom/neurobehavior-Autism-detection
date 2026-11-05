@@ -188,13 +188,14 @@ class GradCAMService:
         # 8. Compute Anatomical Region Importance Analysis
         regional_activations = cls._compute_regional_importance(cam_resized)
 
-        # 9. Formulate Clinical Explainability Interpretation
+        # 9. Formulate Clinical Explainability Interpretation in clear, simple words
         top_region = regional_activations[0]["name"] if regional_activations else "Cortical Network"
+        role = regional_activations[0]["clinical_role"] if regional_activations else "brain connectivity"
         interpretation = (
-            f"Grad-CAM backpropagation reveals that the deep 2.5D CNN placed peak predictive attention (top saliency) "
-            f"on structural boundaries within the {top_region}. In structural MRI studies of autism spectrum conditions, "
-            f"this zone correlates with localized gray-matter volumetric variation, cortical thickening/thinning gradients, "
-            f"and altered axonal organization."
+            f"In simple words: The AI focused its highest visual attention on the {top_region}. "
+            f"This part of the brain controls {role.lower()}. "
+            f"The deep learning model detected structural shape and tissue variation in this exact area to reach its prediction, "
+            f"giving doctors clear visual proof instead of an unexplained guess."
         )
 
         return {
