@@ -598,3 +598,195 @@ a:hover {
 .fade-in {
   animation: fadeIn 0.25s ease-out forwards;
 }
+
+/* ==========================================================================
+   Professional Clinical Validation & Quality Verification Styles
+   ========================================================================== */
+
+/* Input Validation States */
+.form-input.is-invalid,
+.form-select.is-invalid,
+.form-textarea.is-invalid {
+  border-color: #ef4444 !important;
+  background-color: #fef2f2 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+}
+
+.form-input.is-valid,
+.form-select.is-valid {
+  border-color: #22c55e !important;
+  background-color: #f0fdf4 !important;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12) !important;
+}
+
+.field-error-msg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #dc2626;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-top: 5px;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.field-success-msg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #16a34a;
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-top: 5px;
+  animation: fadeIn 0.15s ease-out;
+}
+
+/* Password Strength Meter */
+.password-meter-container {
+  margin-top: 8px;
+  background: #f8fafc;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--slate-200);
+}
+
+.password-meter-track {
+  height: 6px;
+  background: var(--slate-200);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 6px 0;
+  display: flex;
+  gap: 3px;
+}
+
+.password-meter-segment {
+  flex: 1;
+  height: 100%;
+  background: #e2e8f0;
+  border-radius: 999px;
+  transition: background-color 0.25s ease;
+}
+
+/* Pre-Flight File Verification Card */
+.preflight-card {
+  background: #ffffff;
+  border: 1px solid #bae6fd;
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  margin-top: 14px;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.06);
+}
+
+.preflight-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.preflight-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.84rem;
+  color: var(--slate-700);
+}
+
+.preflight-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  font-size: 0.74rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #15803d;
+}
+
+/* Animated Clinical Inference Pipeline Stepper */
+.inference-stepper-card {
+  background: #ffffff;
+  border: 2px solid #38bdf8;
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(2, 132, 199, 0.12);
+}
+
+.stepper-progress-bar {
+  height: 8px;
+  background: #e0f2fe;
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 16px 0 20px;
+}
+
+.stepper-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0284c7, #38bdf8);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.stepper-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.stepper-step:last-child {
+  border-bottom: none;
+}
+
+.stepper-icon-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.stepper-step.completed .stepper-icon-circle {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.stepper-step.active .stepper-icon-circle {
+  background: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.2);
+  animation: pulse 1.5s infinite;
+}
+
+.stepper-step.pending .stepper-icon-circle {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+/* Missing Item Highlight (Questionnaire) */
+.missing-item-alert {
+  border: 2px solid #ef4444 !important;
+  background-color: #fff5f5 !important;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12) !important;
+  animation: shake 0.4s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+

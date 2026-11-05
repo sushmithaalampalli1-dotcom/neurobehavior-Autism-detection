@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
 import { api } from '../api/client';
+import {
+  validateEmail,
+  evaluatePasswordStrength,
+  validatePhoneNumber,
+  validateAge,
+  validateFullName,
+} from '../utils/validators';
 
 export default function AuthPage({ onLoginSuccess, navigate }) {
   // Mode: 'signin', 'register', 'forgot'
@@ -8,6 +15,7 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
   // Common credentials
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [registerConfirmPassword, setRegisterConfirmPassword] = useState('');
 
   // Register demographic & parent/guardian fields
   const [fullName, setFullName] = useState('');
@@ -16,10 +24,13 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
   const [bloodGroup, setBloodGroup] = useState('B-');
   const [phoneNumber, setPhoneNumber] = useState('');
 
-  // Parent / Guardian details for security and safety
+  // Parent / Guardian details for security and pediatric safety
   const [parentName, setParentName] = useState('');
   const [parentRelation, setParentRelation] = useState('Parent / Legal Guardian');
   const [parentPhone, setParentPhone] = useState('');
+
+  // Touched state for professional on-the-fly validation feedback
+  const [touched, setTouched] = useState({});
 
   // Forgot password flow state
   const [forgotStep, setForgotStep] = useState(1); // 1: request code, 2: verify & reset
@@ -35,27 +46,101 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Handle Login & Registration Submit
+  const markTouched = (field) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  };
+
+  // Live validation calculations
+  const emailVal = validateEmail(email);
+  const passStrength = evaluatePasswordStrength(password);
+  const ageVal = validateAge(age);
+  const nameVal = validateFullName(fullName);
+  const phoneVal = validatePhoneNumber(phoneNumber);
+  const parentNameVal = validateFullName(parentName);
+  const parentPhoneVal = validatePhoneNumber(parentPhone);
+
+  const isPasswordMatch = password && registerConfirmPassword && password === registerConfirmPassword;
+
+  // Handle Login & Registration Submit with strict pre-submission validation
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setIsAlreadyRegistered(false);
     setSuccessMsg('');
+
+    // Mark all relevant fields as touched
+    if (authMode === 'register') {
+      setTouched({
+        fullName: true,
+        age: true,
+        phoneNumber: true,
+        parentName: true,
+        parentPhone: true,
+        email: true,
+        password: true,
+        registerConfirmPassword: true,
+      });
+
+      // Validation assertions
+      if (!nameVal.isValid) {
+        setError(nameVal.message);
+        return;
+      }
+      if (!ageVal.isValid) {
+        setError(ageVal.message);
+        return;
+      }
+      if (!phoneVal.isValid) {
+        setError(phoneVal.message);
+        return;
+      }
+      if (ageVal.isPediatric && !parentNameVal.isValid) {
+        setError('Pediatric assent requires a valid Parent / Guardian Full Name.');
+        return;
+      }
+      if (ageVal.isPediatric && !parentPhoneVal.isValid) {
+        setError('Pediatric assent requires a valid Parent / Guardian Contact Number.');
+        return;
+      }
+      if (!emailVal.isValid) {
+        setError(emailVal.message);
+        return;
+      }
+      if (password.length < 6) {
+        setError('Password must be at least 6 characters long.');
+        return;
+      }
+      if (password !== registerConfirmPassword) {
+        setError('Passwords do not match. Please re-enter.');
+        return;
+      }
+    } else {
+      setTouched({ email: true, password: true });
+      if (!emailVal.isValid) {
+        setError(emailVal.message);
+        return;
+      }
+      if (!password) {
+        setError('Password is required to sign in.');
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
       if (authMode === 'register') {
         const payload = {
-          full_name: fullName,
-          email,
+          full_name: fullName.trim(),
+          email: email.trim(),
           password,
-          age: parseFloat(age) || 21.0,
+          age: ageVal.ageNum,
           gender,
           blood_group: bloodGroup,
-          phone_number: phoneNumber,
-          parent_name: parentName,
+          phone_number: phoneNumber.trim(),
+          parent_name: parentName.trim(),
           parent_relation: parentRelation,
-          parent_phone: parentPhone,
+          parent_phone: parentPhone.trim(),
           role: 'patient',
         };
 
@@ -63,7 +148,7 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
         onLoginSuccess(res.user);
         navigate('mri');
       } else {
-        const res = await api.login(email, password);
+        const res = await api.login(email.trim(), password);
         onLoginSuccess(res.user);
         navigate('mri');
       }
@@ -89,14 +174,21 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
     setError('');
     setSuccessMsg('');
     setDevCodeNotice(null);
+
+    const emailCheck = validateEmail(resetEmail);
+    if (!emailCheck.isValid) {
+      setError(emailCheck.message);
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const res = await api.forgotPassword(resetEmail);
+      const res = await api.forgotPassword(resetEmail.trim());
       setSuccessMsg(res.message || `Verification code sent to ${resetEmail}. Check your inbox.`);
       if (res.dev_code) {
         setDevCodeNotice(res.dev_code);
-        setVerificationCode(res.dev_code); // Pre-fill for convenience during presentation/testing
+        setVerificationCode(res.dev_code);
       }
       setForgotStep(2);
     } catch (err) {
@@ -112,8 +204,8 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
     setError('');
     setSuccessMsg('');
 
-    if (newPassword !== confirmPassword) {
-      setError('New passwords do not match. Please verify both fields.');
+    if (verificationCode.trim().length !== 6) {
+      setError('Please enter the 6-digit verification code.');
       return;
     }
 
@@ -122,10 +214,15 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
       return;
     }
 
+    if (newPassword !== confirmPassword) {
+      setError('New passwords do not match. Please verify both fields.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const res = await api.resetPassword(resetEmail, verificationCode, newPassword);
+      const res = await api.resetPassword(resetEmail.trim(), verificationCode.trim(), newPassword);
       setSuccessMsg(res.message || 'Password successfully updated! Please sign in with your new credentials.');
       setEmail(resetEmail);
       setPassword('');
@@ -166,17 +263,17 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
   };
 
   return (
-    <div style={{ maxWidth: '780px', margin: '20px auto 40px' }} className="fade-in">
+    <div style={{ maxWidth: '820px', margin: '20px auto 40px' }} className="fade-in">
       {/* Project Title Card */}
       <div className="card" style={{ textAlign: 'center', marginBottom: '22px', borderTop: '5px solid var(--primary)', padding: '26px 24px' }}>
         <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#e0f2fe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.6rem', margin: '0 auto 12px' }}>
           🧠
         </div>
-        <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--navy)', lineHeight: 1.38, marginBottom: '8px', letterSpacing: '-0.01em' }}>
-          NeuroBehavior-ASD: Deep Learning-Based Autism Detection Using Brain Imaging Biomarkers and Behavioral Features with Personalized Support System
+        <h1 style={{ fontSize: '1.38rem', fontWeight: 800, color: 'var(--navy)', lineHeight: 1.38, marginBottom: '8px', letterSpacing: '-0.01em' }}>
+          NeuroBehavior-ASD: Deep Learning-Based Autism Detection Using Brain Imaging Biomarkers and Behavioral Features
         </h1>
-        <p style={{ fontSize: '0.88rem', color: 'var(--slate-500)', margin: 0 }}>
-          Clinical Neuroimaging Biomarker Screening, Standardized IASQ Behavioral Screening & Location-Based Support
+        <p style={{ fontSize: '0.86rem', color: 'var(--slate-500)', margin: 0 }}>
+          Clinical Neuroimaging Biomarker Screening, Standardized IASQ Behavioral Intake & Geographic Care Navigation
         </p>
       </div>
 
@@ -259,8 +356,10 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
 
         {/* Error Alert */}
         {error && (
-          <div className="alert alert-warning" style={{ padding: '12px 16px', fontSize: '0.85rem', marginBottom: '16px' }}>
-            <div style={{ fontWeight: 600, marginBottom: isAlreadyRegistered ? '6px' : '0' }}>{error}</div>
+          <div className="alert alert-warning" style={{ padding: '12px 16px', fontSize: '0.85rem', marginBottom: '16px', borderLeft: '4px solid #ef4444' }}>
+            <div style={{ fontWeight: 700, color: '#b91c1c', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>⚠️</span> {error}
+            </div>
             {isAlreadyRegistered && (
               <div style={{ marginTop: '8px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                 <button
@@ -311,27 +410,34 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
             MODE 1 & 2: SIGN IN & REGISTER FORMS
         ========================================================================= */}
         {authMode !== 'forgot' && (
-          <form onSubmit={handleAuthSubmit}>
+          <form onSubmit={handleAuthSubmit} noValidate>
             {authMode === 'register' && (
               <>
                 {/* 1. PATIENT BASIC PROFILE */}
-                <div style={{ marginBottom: '14px' }}>
+                <div className="form-group" style={{ marginBottom: '16px' }}>
                   <label className="form-label" htmlFor="regFullName" style={{ fontWeight: 700 }}>
                     Patient Full Legal Name <span style={{ color: '#dc2626' }}>*</span>
                   </label>
                   <input
                     id="regFullName"
                     type="text"
-                    className="form-input"
-                    placeholder="e.g. Aarav Sharma / Patient Name"
+                    className={`form-input ${touched.fullName ? (nameVal.isValid ? 'is-valid' : 'is-invalid') : ''}`}
+                    placeholder="e.g. Aarav Sharma"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
+                    onBlur={() => markTouched('fullName')}
                     required
                   />
+                  {touched.fullName && !nameVal.isValid && (
+                    <div className="field-error-msg">⚠️ {nameVal.message}</div>
+                  )}
+                  {touched.fullName && nameVal.isValid && (
+                    <div className="field-success-msg">✓ Valid legal name</div>
+                  )}
                 </div>
 
                 {/* Age, Gender, Blood Group */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                   <div>
                     <label className="form-label" htmlFor="regAge" style={{ fontWeight: 700 }}>
                       Age (Years) <span style={{ color: '#dc2626' }}>*</span>
@@ -340,14 +446,21 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
                       id="regAge"
                       type="number"
                       step="0.1"
-                      min="1"
+                      min="0.1"
                       max="120"
-                      className="form-input"
-                      placeholder="e.g. 21.0"
+                      className={`form-input ${touched.age ? (ageVal.isValid ? 'is-valid' : 'is-invalid') : ''}`}
+                      placeholder="e.g. 5.0 (0.1 for 1 mo)"
                       value={age}
                       onChange={(e) => setAge(e.target.value)}
+                      onBlur={() => markTouched('age')}
                       required
                     />
+                    {touched.age && !ageVal.isValid && (
+                      <div className="field-error-msg">⚠️ {ageVal.message}</div>
+                    )}
+                    {touched.age && ageVal.isValid && (
+                      <div className="field-success-msg">✓ {ageVal.categoryLabel}</div>
+                    )}
                   </div>
 
                   <div>
@@ -356,7 +469,7 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
                     </label>
                     <select
                       id="regGender"
-                      className="form-input"
+                      className="form-input is-valid"
                       value={gender}
                       onChange={(e) => setGender(e.target.value)}
                       required
@@ -373,7 +486,7 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
                     </label>
                     <select
                       id="regBloodGroup"
-                      className="form-input"
+                      className="form-input is-valid"
                       value={bloodGroup}
                       onChange={(e) => setBloodGroup(e.target.value)}
                       required
@@ -393,32 +506,36 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
                 {/* Patient Phone Number */}
                 <div className="form-group" style={{ marginBottom: '18px' }}>
                   <label className="form-label" htmlFor="regPhone" style={{ fontWeight: 700 }}>
-                    Phone Number <span style={{ color: '#dc2626' }}>*</span>
+                    Patient Contact Number <span style={{ color: '#dc2626' }}>*</span>
                   </label>
                   <input
                     id="regPhone"
                     type="tel"
-                    className="form-input"
-                    placeholder="e.g. +91 9876543210"
+                    className={`form-input ${touched.phoneNumber ? (phoneVal.isValid ? 'is-valid' : 'is-invalid') : ''}`}
+                    placeholder="e.g. +91 9876543210 (10 digits)"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
+                    onBlur={() => markTouched('phoneNumber')}
                     required
                   />
-                  <small style={{ color: 'var(--slate-500)', fontSize: '0.76rem' }}>
-                    Used for clinical consultation callbacks and diagnostic notifications.
-                  </small>
+                  {touched.phoneNumber && !phoneVal.isValid && (
+                    <div className="field-error-msg">⚠️ {phoneVal.message}</div>
+                  )}
+                  {touched.phoneNumber && phoneVal.isValid && (
+                    <div className="field-success-msg">✓ Valid contact number</div>
+                  )}
                 </div>
 
                 {/* 2. PARENT / GUARDIAN DETAILS SECTION (Safety & Authentication) */}
-                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '20px' }}>
+                <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '12px', padding: '18px', marginBottom: '20px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                    <span style={{ fontSize: '1.2rem' }}>🛡️</span>
+                    <span style={{ fontSize: '1.25rem' }}>🛡️</span>
                     <div>
-                      <h4 style={{ margin: 0, fontSize: '0.94rem', fontWeight: 800, color: '#1e3a8a' }}>
-                        Parent / Guardian Profile (Safety & Authentication)
+                      <h4 style={{ margin: 0, fontSize: '0.96rem', fontWeight: 800, color: '#1e3a8a' }}>
+                        Parent / Guardian Profile (Pediatric Assent & Safety)
                       </h4>
-                      <p style={{ margin: '2px 0 0 0', fontSize: '0.76rem', color: '#64748b' }}>
-                        Recorded for pediatric assent, emergency contact, and authorized medical report access.
+                      <p style={{ margin: '2px 0 0 0', fontSize: '0.78rem', color: '#64748b' }}>
+                        Mandatory for minors and pediatric infants; optional verification for adults.
                       </p>
                     </div>
                   </div>
@@ -426,17 +543,21 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                     <div>
                       <label className="form-label" htmlFor="parentName" style={{ fontWeight: 600, fontSize: '0.82rem' }}>
-                        Parent / Guardian Full Name <span style={{ color: '#dc2626' }}>*</span>
+                        Guardian Full Name <span style={{ color: '#dc2626' }}>*</span>
                       </label>
                       <input
                         id="parentName"
                         type="text"
-                        className="form-input"
+                        className={`form-input ${touched.parentName ? (parentNameVal.isValid ? 'is-valid' : 'is-invalid') : ''}`}
                         placeholder="e.g. Rajesh Sharma"
                         value={parentName}
                         onChange={(e) => setParentName(e.target.value)}
+                        onBlur={() => markTouched('parentName')}
                         required
                       />
+                      {touched.parentName && !parentNameVal.isValid && (
+                        <div className="field-error-msg">⚠️ {parentNameVal.message}</div>
+                      )}
                     </div>
 
                     <div>
@@ -445,7 +566,7 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
                       </label>
                       <select
                         id="parentRelation"
-                        className="form-input"
+                        className="form-input is-valid"
                         value={parentRelation}
                         onChange={(e) => setParentRelation(e.target.value)}
                         required
@@ -461,40 +582,51 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
 
                   <div>
                     <label className="form-label" htmlFor="parentPhone" style={{ fontWeight: 600, fontSize: '0.82rem' }}>
-                      Parent / Guardian Contact Number <span style={{ color: '#dc2626' }}>*</span>
+                      Guardian Contact Phone <span style={{ color: '#dc2626' }}>*</span>
                     </label>
                     <input
                       id="parentPhone"
                       type="tel"
-                      className="form-input"
-                      placeholder="e.g. +91 9123456789"
+                      className={`form-input ${touched.parentPhone ? (parentPhoneVal.isValid ? 'is-valid' : 'is-invalid') : ''}`}
+                      placeholder="e.g. +91 9123456789 (10 digits)"
                       value={parentPhone}
                       onChange={(e) => setParentPhone(e.target.value)}
+                      onBlur={() => markTouched('parentPhone')}
                       required
                     />
+                    {touched.parentPhone && !parentPhoneVal.isValid && (
+                      <div className="field-error-msg">⚠️ {parentPhoneVal.message}</div>
+                    )}
                   </div>
                 </div>
               </>
             )}
 
             {/* Email Address */}
-            <div className="form-group">
+            <div className="form-group" style={{ marginBottom: '16px' }}>
               <label className="form-label" htmlFor="authEmail" style={{ fontWeight: 700 }}>
                 Email Address <span style={{ color: '#dc2626' }}>*</span>
               </label>
               <input
                 id="authEmail"
                 type="email"
-                className="form-input"
+                className={`form-input ${touched.email ? (emailVal.isValid ? 'is-valid' : 'is-invalid') : ''}`}
                 placeholder="name@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => markTouched('email')}
                 required
               />
+              {touched.email && !emailVal.isValid && (
+                <div className="field-error-msg">⚠️ {emailVal.message}</div>
+              )}
+              {touched.email && emailVal.isValid && (
+                <div className="field-success-msg">✓ Valid clinical email format</div>
+              )}
             </div>
 
             {/* Password */}
-            <div className="form-group" style={{ marginBottom: authMode === 'signin' ? '8px' : '18px' }}>
+            <div className="form-group" style={{ marginBottom: authMode === 'signin' ? '8px' : '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <label className="form-label" htmlFor="authPass" style={{ fontWeight: 700, margin: 0 }}>
                   Password <span style={{ color: '#dc2626' }}>*</span>
@@ -518,18 +650,59 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
               <input
                 id="authPass"
                 type="password"
-                className="form-input"
-                placeholder="Enter password (minimum 6 characters)"
+                className={`form-input ${touched.password ? (password.length >= 6 ? 'is-valid' : 'is-invalid') : ''}`}
+                placeholder={authMode === 'register' ? 'Choose a strong password (min 6 characters)' : 'Enter your password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onBlur={() => markTouched('password')}
                 required
               />
+              {authMode === 'register' && password && (
+                <div className="password-meter-container">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}>
+                    <span style={{ color: 'var(--slate-600)' }}>Password Strength:</span>
+                    <strong style={{ color: passStrength.color }}>{passStrength.label}</strong>
+                  </div>
+                  <div className="password-meter-track">
+                    <div className="password-meter-segment" style={{ background: passStrength.score >= 1 ? passStrength.color : '#e2e8f0' }} />
+                    <div className="password-meter-segment" style={{ background: passStrength.score >= 2 ? passStrength.color : '#e2e8f0' }} />
+                    <div className="password-meter-segment" style={{ background: passStrength.score >= 3 ? passStrength.color : '#e2e8f0' }} />
+                    <div className="password-meter-segment" style={{ background: passStrength.score >= 4 ? passStrength.color : '#e2e8f0' }} />
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--slate-500)' }}>{passStrength.feedback}</div>
+                </div>
+              )}
             </div>
+
+            {/* Confirm Password (Register Mode only) */}
+            {authMode === 'register' && (
+              <div className="form-group" style={{ marginBottom: '18px' }}>
+                <label className="form-label" htmlFor="regConfirmPass" style={{ fontWeight: 700 }}>
+                  Confirm Password <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <input
+                  id="regConfirmPass"
+                  type="password"
+                  className={`form-input ${touched.registerConfirmPassword ? (isPasswordMatch ? 'is-valid' : 'is-invalid') : ''}`}
+                  placeholder="Re-enter your chosen password"
+                  value={registerConfirmPassword}
+                  onChange={(e) => setRegisterConfirmPassword(e.target.value)}
+                  onBlur={() => markTouched('registerConfirmPassword')}
+                  required
+                />
+                {touched.registerConfirmPassword && !isPasswordMatch && (
+                  <div className="field-error-msg">⚠️ Passwords do not match.</div>
+                )}
+                {touched.registerConfirmPassword && isPasswordMatch && (
+                  <div className="field-success-msg">✓ Passwords match successfully</div>
+                )}
+              </div>
+            )}
 
             <button
               type="submit"
               className="btn btn-primary"
-              style={{ width: '100%', padding: '12px', fontSize: '0.96rem', marginTop: '12px' }}
+              style={{ width: '100%', padding: '13px', fontSize: '0.96rem', marginTop: '12px' }}
               disabled={loading}
             >
               {loading
@@ -545,8 +718,8 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
         {authMode === 'forgot' && (
           <div className="fade-in">
             {forgotStep === 1 ? (
-              <form onSubmit={handleSendVerificationCode}>
-                <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '6px', padding: '14px', marginBottom: '18px', fontSize: '0.84rem', color: '#0369a1' }}>
+              <form onSubmit={handleSendVerificationCode} noValidate>
+                <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '14px', marginBottom: '18px', fontSize: '0.84rem', color: '#0369a1' }}>
                   <strong>🔒 Secure Email Verification:</strong> Enter the email address linked to your account. We will dispatch a 6-digit verification code to confirm your identity.
                 </div>
 
@@ -589,8 +762,8 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
                 </div>
               </form>
             ) : (
-              <form onSubmit={handleResetPasswordSubmit}>
-                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '12px', marginBottom: '16px', fontSize: '0.84rem', color: '#166534' }}>
+              <form onSubmit={handleResetPasswordSubmit} noValidate>
+                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '12px', marginBottom: '16px', fontSize: '0.84rem', color: '#166534' }}>
                   Verification code dispatched to <strong>{resetEmail}</strong>. Enter the 6-digit code below to set your new password.
                 </div>
 

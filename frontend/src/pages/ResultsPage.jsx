@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api/client';
+import { validateAge, validateFullName } from '../utils/validators';
 
 export default function ResultsPage({ user, navigate, activeMriResult, activeQuestionnaireResult }) {
   const [assessments, setAssessments] = useState([]);
@@ -78,16 +79,29 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
   const consentStatus = isAdult ? 'Recorded & Verified (Adult Patient)' : 'Recorded & Verified (Parent/Guardian Assent)';
 
   const handleGenerateReport = async () => {
+    setError('');
+
+    const nameCheck = validateFullName(patientName);
+    if (!nameCheck.isValid) {
+      setError(`Cannot generate report: ${nameCheck.message}`);
+      return;
+    }
+
+    const ageCheck = validateAge(patientAge);
+    if (!ageCheck.isValid) {
+      setError(`Cannot generate report: ${ageCheck.message}`);
+      return;
+    }
+
     setGenerating(true);
     setReportSuccess(null);
-    setError('');
 
     try {
       const targetId = recordedMri?.id || recordedQ?.id || (assessments[0]?.id) || null;
       const payload = {
         assessment_id: targetId,
-        patient_name: patientName,
-        patient_age: patientAge,
+        patient_name: patientName.trim(),
+        patient_age: String(ageCheck.ageNum),
         patient_gender: patientGender,
         blood_group: bloodGroup,
         mri_filename: mriFilename,
