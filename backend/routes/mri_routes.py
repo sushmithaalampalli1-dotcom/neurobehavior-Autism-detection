@@ -92,6 +92,42 @@ def upload_mri_scan():
         return jsonify({"error": f"Internal processing error: {str(exc)}"}), 500
 
 
+@mri_bp.route("/file/<filename>", methods=["GET"])
+def get_mri_file(filename):
+    """Serve uploaded MRI slices or generated Grad-CAM overlays."""
+    from werkzeug.utils import secure_filename
+    safe_name = secure_filename(filename)
+    upload_folder = current_app.config["UPLOAD_FOLDER"]
+    file_path = os.path.join(upload_folder, safe_name)
+    if not os.path.exists(file_path):
+        return jsonify({"error": f"File '{safe_name}' not found."}), 404
+    mimetype = "image/png"
+    if safe_name.lower().endswith((".jpg", ".jpeg")):
+        mimetype = "image/jpeg"
+    return send_from_directory(upload_folder, safe_name, mimetype=mimetype)
+
+
+@mri_bp.route("/gradcam/<filename>", methods=["GET"])
+def get_gradcam_overlay(filename):
+    """Serve the Grad-CAM overlay image for an uploaded MRI scan."""
+    from pathlib import Path
+    from werkzeug.utils import secure_filename
+    safe_name = secure_filename(filename)
+    stem = Path(safe_name).stem
+    overlay_filename = f"gradcam_overlay_{stem}.png"
+    upload_folder = current_app.config["UPLOAD_FOLDER"]
+    overlay_path = os.path.join(upload_folder, overlay_filename)
+
+    if not os.path.exists(overlay_path):
+        # Check if direct file exists
+        if os.path.exists(os.path.join(upload_folder, safe_name)):
+            overlay_filename = safe_name
+        else:
+            return jsonify({"error": f"Grad-CAM overlay not found for '{safe_name}'."}), 404
+
+    return send_from_directory(upload_folder, overlay_filename, mimetype="image/png")
+
+
 @mri_bp.route("/history", methods=["GET"])
 @token_required
 def list_mri_assessments():

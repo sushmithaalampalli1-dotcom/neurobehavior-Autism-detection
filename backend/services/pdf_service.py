@@ -415,8 +415,10 @@ class PDFReportService:
             conf_pct_str = f"{float(pred_conf or 0.50) * 100:.1f}%"
             raw_score_str = f"{prob_raw:.4f} (Threshold: {threshold:.2f})"
 
-            # 1. Resolve Uploaded MRI Scan Image Flowable
-            mri_image_flowable = _resolve_mri_image_flowable(mri_filename, project_root, width=105, height=105)
+            # 1. Resolve Uploaded MRI Scan Image Flowable and Grad-CAM Flowable
+            mri_image_flowable = _resolve_mri_image_flowable(mri_filename, project_root, width=90, height=90)
+            gradcam_fn = f"gradcam_overlay_{Path(mri_filename).stem}.png"
+            gradcam_flowable = _resolve_mri_image_flowable(gradcam_fn, project_root, width=90, height=90)
 
             # 2. MRI Data Metrics Table
             mri_metrics_rows = [
@@ -434,13 +436,14 @@ class PDFReportService:
                 ],
                 [
                     Paragraph("<b>Quality Control Checks:</b>", cell_label),
-                    Paragraph("PASSED (Standard deviation >= 5.0, non-degenerate brain slice)", cell_value),
-                    Paragraph("<b>Model Architecture:</b>", cell_label),
-                    Paragraph("Multi-Scale 2.5D CNN + MobileNetV2 Latent Feature Ensemble", cell_value),
+                    Paragraph("PASSED (SD >= 5.0, non-degenerate)", cell_value),
+                    Paragraph("<b>Explainable AI (XAI):</b>", cell_label),
+                    Paragraph("Grad-CAM Saliency Overlay (conv4)", cell_value),
                 ],
             ]
 
-            mri_metrics_table = Table(mri_metrics_rows, colWidths=[110, 100, 95, 115])
+            metrics_col_widths = [100, 85, 80, 85] if gradcam_flowable else [110, 100, 95, 115]
+            mri_metrics_table = Table(mri_metrics_rows, colWidths=metrics_col_widths)
             mri_metrics_table.setStyle(TableStyle([
                 ("BACKGROUND", (0, 0), (0, -1), bg_alt),
                 ("BACKGROUND", (2, 0), (2, -1), bg_alt),
@@ -453,7 +456,27 @@ class PDFReportService:
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
             ]))
 
-            if mri_image_flowable:
+            if mri_image_flowable and gradcam_flowable:
+                scan_container = [
+                    mri_image_flowable,
+                    Spacer(1, 2),
+                    Paragraph(f"<b>Uploaded Scan:</b><br/>{Path(mri_filename).name[:16]}", image_caption),
+                ]
+                gradcam_container = [
+                    gradcam_flowable,
+                    Spacer(1, 2),
+                    Paragraph("<b>Grad-CAM Saliency:</b><br/>conv4 Overlay", image_caption),
+                ]
+                sec2_composite = Table([[scan_container, gradcam_container, mri_metrics_table]], colWidths=[95, 95, 350])
+                sec2_composite.setStyle(TableStyle([
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                    ("TOPPADDING", (0, 0), (-1, -1), 0),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                ]))
+                elements.append(sec2_composite)
+            elif mri_image_flowable:
                 img_container = [
                     mri_image_flowable,
                     Spacer(1, 2),

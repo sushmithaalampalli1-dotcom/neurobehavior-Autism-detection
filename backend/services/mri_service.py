@@ -434,11 +434,44 @@ class MRIService:
         db.session.add(assessment)
         db.session.commit()
 
+        # Generate Grad-CAM Explainable AI Saliency Heatmap & Superimposed Overlay
+        explainable_ai = None
+        try:
+            from backend.services.gradcam_service import GradCAMService
+            slice_path_for_cam = destination
+
+            if filename.lower().endswith((".nii", ".nii.gz")):
+                # For NIfTI volume, extract mid-plane slice for 2D Grad-CAM
+                import nibabel as nib
+                nii = nib.load(str(destination))
+                vol = nii.get_fdata()
+                mid_idx = vol.shape[2] // 2
+                mid_slice = vol[:, :, mid_idx]
+                ptp = np.ptp(mid_slice)
+                if ptp > 0:
+                    mid_norm = ((mid_slice - np.min(mid_slice)) / ptp * 255.0).astype(np.uint8)
+                else:
+                    mid_norm = np.zeros_like(mid_slice, dtype=np.uint8)
+                slice_path_for_cam = upload_folder / f"slice_{Path(filename).stem}.png"
+                Image.fromarray(mid_norm).save(str(slice_path_for_cam))
+
+            if model is not None:
+                explainable_ai = GradCAMService.generate_gradcam_maps(
+                    image_path=slice_path_for_cam,
+                    model=model,
+                    output_dir=upload_folder,
+                    filename_stem=Path(filename).stem,
+                    target_layer_name="conv4",
+                )
+        except Exception as xai_err:
+            print(f"[!] Grad-CAM Explainable AI generation note: {xai_err}")
+
         response = {
             "success": True,
             "assessment_id": assessment.id,
             "filename": filename,
             "header_metadata": file_info,
+            "explainable_ai": explainable_ai,
             "model_status": {
                 "state": "TRAINED_ACTIVE" if predicted_dx else "STANDBY",
                 "message": (

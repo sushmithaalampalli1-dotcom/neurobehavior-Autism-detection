@@ -412,77 +412,109 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
             <div style={{ height: '2px', background: '#1e3a8a', marginBottom: '8px' }}></div>
 
             {hasMri ? (
-              <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '14px', alignItems: 'center' }}>
-                {/* Uploaded MRI Scan Slice */}
-                <div style={{ textAlign: 'center', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px', background: '#0f172a' }}>
-                  {mriPreviewUrl ? (
-                    <img
-                      src={mriPreviewUrl}
-                      alt="Uploaded brain MRI scan"
-                      style={{ width: '115px', height: '115px', objectFit: 'contain', display: 'block', margin: '0 auto', borderRadius: '4px' }}
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                      }}
-                    />
-                  ) : (
-                    <div style={{ width: '115px', height: '115px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '2.2rem' }}>
-                      🧠
+              <div>
+                <div style={{ display: 'grid', gridTemplateColumns: activeMriResult?.explainable_ai ? '115px 115px 1fr' : '130px 1fr', gap: '14px', alignItems: 'center' }}>
+                  {/* Uploaded MRI Scan Slice */}
+                  <div style={{ textAlign: 'center', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px', background: '#0f172a' }}>
+                    {mriPreviewUrl ? (
+                      <img
+                        src={mriPreviewUrl}
+                        alt="Uploaded brain MRI scan"
+                        style={{ width: '100px', height: '100px', objectFit: 'contain', display: 'block', margin: '0 auto', borderRadius: '4px' }}
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div style={{ width: '100px', height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '2rem' }}>
+                        🧠
+                      </div>
+                    )}
+                    <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '4px', wordBreak: 'break-all' }}>
+                      <code>{mriFilename || 'Uploaded Scan'}</code>
+                    </div>
+                  </div>
+
+                  {/* Grad-CAM Saliency Overlay */}
+                  {activeMriResult?.explainable_ai && (
+                    <div style={{ textAlign: 'center', border: '1px solid #38bdf8', borderRadius: '6px', padding: '6px', background: '#0b1329' }}>
+                      <img
+                        src={activeMriResult.explainable_ai.overlay_base64 || activeMriResult.explainable_ai.overlay_url}
+                        alt="Grad-CAM Saliency Overlay"
+                        style={{ width: '100px', height: '100px', objectFit: 'contain', display: 'block', margin: '0 auto', borderRadius: '4px' }}
+                      />
+                      <div style={{ fontSize: '0.68rem', color: '#38bdf8', marginTop: '4px', fontWeight: 700 }}>
+                        Grad-CAM Saliency
+                      </div>
                     </div>
                   )}
-                  <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '4px', wordBreak: 'break-all' }}>
-                    <code>{mriFilename || 'Uploaded Scan'}</code>
-                  </div>
+
+                  {/* Metrics Table */}
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', border: '1px solid #e2e8f0' }}>
+                    <tbody>
+                      <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ width: '25%', background: '#f8fafc', padding: '6px 10px', fontWeight: 700, borderRight: '1px solid #e2e8f0' }}>
+                          Predicted Classification:
+                        </td>
+                        <td style={{ width: '25%', padding: '6px 10px', borderRight: '1px solid #e2e8f0' }}>
+                          <strong style={{ color: mriAsd ? '#dc2626' : '#16a34a', fontSize: '0.92rem' }}>
+                            {mriAsd ? 'ASD' : 'Control / Non-Autism'}
+                          </strong>
+                        </td>
+                        <td style={{ width: '22%', background: '#f8fafc', padding: '6px 10px', fontWeight: 700, borderRight: '1px solid #e2e8f0' }}>
+                          Model Raw Score:
+                        </td>
+                        <td style={{ width: '28%', padding: '6px 10px' }}>
+                          <strong>{mriRawScore}</strong> (Threshold: 0.56)
+                        </td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ background: '#f8fafc', padding: '6px 10px', fontWeight: 700, borderRight: '1px solid #e2e8f0' }}>
+                          Calibrated Confidence:
+                        </td>
+                        <td style={{ padding: '6px 10px', borderRight: '1px solid #e2e8f0' }}>
+                          <strong>{mriConfidencePercent}%</strong>
+                        </td>
+                        <td style={{ background: '#f8fafc', padding: '6px 10px', fontWeight: 700, borderRight: '1px solid #e2e8f0' }}>
+                          Input Modality:
+                        </td>
+                        <td style={{ padding: '6px 10px' }}>
+                          Brain MRI Scan (224x224, Min-Max)
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style={{ background: '#f8fafc', padding: '6px 10px', fontWeight: 700, borderRight: '1px solid #e2e8f0' }}>
+                          Quality Control Checks:
+                        </td>
+                        <td style={{ padding: '6px 10px', borderRight: '1px solid #e2e8f0' }}>
+                          <span style={{ color: '#16a34a', fontWeight: 700 }}>PASSED</span> (Std dev &ge; 5.0)
+                        </td>
+                        <td style={{ background: '#f8fafc', padding: '6px 10px', fontWeight: 700, borderRight: '1px solid #e2e8f0' }}>
+                          Explainable AI:
+                        </td>
+                        <td style={{ padding: '6px 10px' }}>
+                          {activeMriResult?.explainable_ai ? 'Grad-CAM (conv4 Overlay)' : 'Multi-Scale 2.5D CNN'}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
 
-                {/* Metrics Table */}
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', border: '1px solid #e2e8f0' }}>
-                  <tbody>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ width: '25%', background: '#f8fafc', padding: '6px 10px', fontWeight: 700, borderRight: '1px solid #e2e8f0' }}>
-                        Predicted Classification:
-                      </td>
-                      <td style={{ width: '25%', padding: '6px 10px', borderRight: '1px solid #e2e8f0' }}>
-                        <strong style={{ color: mriAsd ? '#dc2626' : '#16a34a', fontSize: '0.92rem' }}>
-                          {mriAsd ? 'ASD' : 'Control / Non-Autism'}
-                        </strong>
-                      </td>
-                      <td style={{ width: '22%', background: '#f8fafc', padding: '6px 10px', fontWeight: 700, borderRight: '1px solid #e2e8f0' }}>
-                        Model Raw Score:
-                      </td>
-                      <td style={{ width: '28%', padding: '6px 10px' }}>
-                        <strong>{mriRawScore}</strong> (Threshold: 0.56)
-                      </td>
-                    </tr>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ background: '#f8fafc', padding: '6px 10px', fontWeight: 700, borderRight: '1px solid #e2e8f0' }}>
-                        Calibrated Confidence:
-                      </td>
-                      <td style={{ padding: '6px 10px', borderRight: '1px solid #e2e8f0' }}>
-                        <strong>{mriConfidencePercent}%</strong>
-                      </td>
-                      <td style={{ background: '#f8fafc', padding: '6px 10px', fontWeight: 700, borderRight: '1px solid #e2e8f0' }}>
-                        Input Modality:
-                      </td>
-                      <td style={{ padding: '6px 10px' }}>
-                        Brain MRI Scan (224x224, Min-Max)
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ background: '#f8fafc', padding: '6px 10px', fontWeight: 700, borderRight: '1px solid #e2e8f0' }}>
-                        Quality Control Checks:
-                      </td>
-                      <td style={{ padding: '6px 10px', borderRight: '1px solid #e2e8f0' }}>
-                        <span style={{ color: '#16a34a', fontWeight: 700 }}>PASSED</span> (Std dev &ge; 5.0)
-                      </td>
-                      <td style={{ background: '#f8fafc', padding: '6px 10px', fontWeight: 700, borderRight: '1px solid #e2e8f0' }}>
-                        Model Architecture:
-                      </td>
-                      <td style={{ padding: '6px 10px' }}>
-                        Multi-Scale 2.5D CNN + MobileNetV2
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                {/* Regional activation chips if explainable_ai is available */}
+                {activeMriResult?.explainable_ai?.top_activated_regions && (
+                  <div style={{ marginTop: '10px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 14px', fontSize: '0.78rem' }}>
+                    <div style={{ fontWeight: 700, color: '#1e3a8a', marginBottom: '6px' }}>
+                      🧠 Explainable AI Biomarker Focus (Grad-CAM conv4 Attention):
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {activeMriResult.explainable_ai.top_activated_regions.map((reg, rIdx) => (
+                        <span key={rIdx} style={{ background: '#e0f2fe', color: '#0369a1', padding: '3px 10px', borderRadius: '4px', fontWeight: 600 }}>
+                          {reg.name}: <strong>{reg.activation_pct}%</strong>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
