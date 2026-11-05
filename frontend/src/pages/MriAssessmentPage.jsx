@@ -522,16 +522,47 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
             </div>
           )}
 
-          {/* Direct pathway to Questionnaire right below result as requested */}
-          <div style={{ background: '#f8fafc', padding: '16px 20px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--slate-200)', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          {/* Direct pathway to Questionnaire right below result */}
+          <div style={{
+            background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
+            padding: '18px 22px',
+            borderRadius: 'var(--radius-lg)',
+            border: '2px solid #86efac',
+            marginBottom: '20px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '14px'
+          }}>
             <div>
-              <strong style={{ fontSize: '0.94rem', color: 'var(--navy)' }}>Next Step: Questionnaire Analysis</strong>
-              <p style={{ fontSize: '0.84rem', color: 'var(--slate-500)', margin: '2px 0 0 0' }}>
-                Complete the 10-item caregiver behavioral questionnaire to correlate with brain imaging findings.
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '1.3rem' }}>📋</span>
+                <strong style={{ fontSize: '1.02rem', color: '#166534' }}>Next Step: Questionnaire Analysis</strong>
+              </div>
+              <p style={{ fontSize: '0.86rem', color: '#15803d', margin: '4px 0 0 0', lineHeight: 1.45 }}>
+                Complete the 10-item caregiver behavioral questionnaire (IASQ) to correlate with your brain imaging results.
               </p>
             </div>
-            <button className="btn btn-primary" onClick={() => navigate('questionnaire')} style={{ padding: '10px 22px' }}>
-              📋 Questionnaire Analysis ➔
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => navigate('questionnaire')}
+              style={{
+                background: '#16a34a',
+                borderColor: '#15803d',
+                padding: '12px 24px',
+                fontSize: '0.94rem',
+                fontWeight: 800,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 12px rgba(22, 163, 74, 0.3)',
+                cursor: 'pointer'
+              }}
+            >
+              <span>📋 Go to Questionnaire Analysis</span>
+              <span style={{ fontSize: '1.15rem' }}>➔</span>
             </button>
           </div>
 
@@ -556,16 +587,41 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
             </div>
           </div>
 
-          {/* Action Pathways at end of result: Questionnaire, Support System, and Report */}
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', borderTop: '1px solid var(--slate-200)', paddingTop: '18px' }}>
-            <button className="btn btn-primary" onClick={() => navigate('questionnaire')}>
-              📋 Questionnaire Analysis ➔
+          {/* Action Pathways at end of MRI analysis result */}
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', borderTop: '1px solid var(--slate-200)', paddingTop: '18px', alignItems: 'center' }}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => navigate('questionnaire')}
+              style={{
+                background: '#16a34a',
+                borderColor: '#15803d',
+                padding: '10px 20px',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 10px rgba(22, 163, 74, 0.25)'
+              }}
+            >
+              <span>📋 Take Questionnaire Screening</span>
+              <span style={{ fontSize: '1.1rem' }}>➔</span>
             </button>
-            <button className="btn btn-secondary" onClick={() => navigate('centres')}>
-              📍 Location Based Personalized Support ➔
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => navigate('centres')}
+              style={{ padding: '10px 18px', fontWeight: 600 }}
+            >
+              📍 Location Based Support Centres ➔
             </button>
-            <button className="btn btn-outline" onClick={() => navigate('report')}>
-              📄 Report ➔
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={() => navigate('report')}
+              style={{ padding: '10px 18px', fontWeight: 600 }}
+            >
+              📄 View Clinical Report ➔
             </button>
           </div>
         </div>
@@ -597,6 +653,59 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Persistent End-of-Analysis CTA to Questionnaire */}
+      <div
+        className="card fade-in"
+        style={{
+          background: 'linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%)',
+          color: '#ffffff',
+          padding: '24px 28px',
+          borderRadius: '12px',
+          marginTop: '20px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '16px',
+          boxShadow: '0 6px 20px rgba(30, 58, 138, 0.25)',
+        }}
+      >
+        <div style={{ maxWidth: '620px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <span style={{ fontSize: '1.4rem' }}>📋</span>
+            <h4 style={{ margin: 0, fontSize: '1.12rem', fontWeight: 800, color: '#ffffff' }}>
+              Proceed to Questionnaire Screening
+            </h4>
+          </div>
+          <p style={{ margin: 0, fontSize: '0.86rem', color: '#cbd5e1', lineHeight: 1.5 }}>
+            Complete the 10-item Indian Autism Screening Questionnaire (IASQ) to evaluate caregiver-observed behavioral milestones alongside neuroimaging biomarkers.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          className="btn"
+          onClick={() => navigate('questionnaire')}
+          style={{
+            background: '#22c55e',
+            color: '#ffffff',
+            fontWeight: 800,
+            fontSize: '0.96rem',
+            padding: '12px 24px',
+            borderRadius: '8px',
+            border: 'none',
+            boxShadow: '0 4px 14px rgba(34, 197, 94, 0.4)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+        >
+          <span>📋 Start Questionnaire Analysis</span>
+          <span style={{ fontSize: '1.15rem' }}>➔</span>
+        </button>
       </div>
     </div>
   );
