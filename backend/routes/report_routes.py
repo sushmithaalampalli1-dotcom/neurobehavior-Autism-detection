@@ -90,6 +90,12 @@ def generate_report():
             Assessment.assessment_type.in_(["questionnaire", "iasq"])
         ).order_by(Assessment.created_at.desc()).first()
 
+        # Strict validation: If patient has entered nothing, do NOT generate a dummy report
+        if not latest_m and not latest_q:
+            return jsonify({
+                "error": "No assessment data available to generate a report. Please upload a brain MRI scan or submit an IASQ questionnaire first."
+            }), 400
+
         if latest_m:
             assessment_data.update(latest_m.to_dict())
             assessment_id = latest_m.id

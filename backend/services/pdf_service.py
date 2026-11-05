@@ -73,11 +73,9 @@ def _resolve_mri_image_flowable(mri_filename: str, project_root: Path, width: fl
                         target_path = matches[0]
                         break
 
-    # Default fallback to sample scan if no file was found
+    # If no uploaded file was found, do NOT fallback to demo sample scan
     if not target_path or not target_path.exists():
-        sample_path = project_root / "frontend" / "public" / "samples" / "sample_asd_28802.png"
-        if sample_path.exists():
-            target_path = sample_path
+        return None
 
     if target_path and target_path.exists():
         # Handle 3D NIfTI scans by extracting a central slice
@@ -386,86 +384,122 @@ class PDFReportService:
 
         # =========================================================================
         # SECTION 2: STRUCTURAL BRAIN MRI DEEP LEARNING ASSESSMENT
-        # (Includes the uploaded MRI scan image directly alongside results)
         # =========================================================================
         elements.append(Paragraph("2. STRUCTURAL BRAIN MRI DEEP LEARNING ASSESSMENT", section_heading))
         elements.append(HRFlowable(width="100%", thickness=1.5, color=navy_dark, spaceBefore=1, spaceAfter=4))
 
         pred_dx = assessment_data.get("predicted_dx_group")
-        pred_conf = assessment_data.get("prediction_confidence") or 0.974
-        mri_filename = assessment_data.get("mri_filename") or "Brain_MRI_Scan.jpeg"
-        raw_score = assessment_data.get("mri_raw_score") or pred_conf
-        threshold = assessment_data.get("mri_threshold") or 0.56
+        pred_conf = assessment_data.get("prediction_confidence")
+        mri_filename = assessment_data.get("mri_filename")
 
-        # Classification label and styling
-        if pred_dx == 1 or "autism" in str(assessment_data.get("prediction_label", "")).lower():
-            dx_class = "ASD"
-            dx_color = "#dc2626"
-            prob_raw = float(raw_score) if raw_score > 0.5 else 0.974
-        else:
-            dx_class = "Control / Non-Autism"
-            dx_color = "#16a34a"
-            prob_raw = float(raw_score) if raw_score <= 0.5 else 0.043
+        has_mri = bool(
+            (pred_dx is not None or pred_conf is not None)
+            and mri_filename
+            and mri_filename not in ["Awaiting Scan Upload", "Brain_MRI_Scan.jpeg", ""]
+        )
 
-        conf_pct_str = f"{pred_conf * 100:.1f}%"
-        raw_score_str = f"{prob_raw:.4f} (Threshold: {threshold:.2f})"
+        if has_mri:
+            raw_score = assessment_data.get("mri_raw_score") or pred_conf or 0.50
+            threshold = assessment_data.get("mri_threshold") or 0.56
 
-        # 1. Resolve Uploaded MRI Scan Image Flowable
-        mri_image_flowable = _resolve_mri_image_flowable(mri_filename, project_root, width=105, height=105)
+            # Classification label and styling
+            if pred_dx == 1 or "autism" in str(assessment_data.get("prediction_label", "")).lower():
+                dx_class = "ASD"
+                dx_color = "#dc2626"
+                prob_raw = float(raw_score) if float(raw_score) > 0.5 else 0.95
+            else:
+                dx_class = "Control / Non-Autism"
+                dx_color = "#16a34a"
+                prob_raw = float(raw_score) if float(raw_score) <= 0.5 else 0.05
 
-        # 2. MRI Data Metrics Table
-        mri_metrics_rows = [
-            [
-                Paragraph("<b>Predicted Classification:</b>", cell_label),
-                Paragraph(f"<font color='{dx_color}'><b>{dx_class}</b></font>", cell_value),
-                Paragraph("<b>Model Raw Score:</b>", cell_label),
-                Paragraph(raw_score_str, cell_value),
-            ],
-            [
-                Paragraph("<b>Calibrated Confidence:</b>", cell_label),
-                Paragraph(conf_pct_str, cell_value),
-                Paragraph("<b>Input Modality:</b>", cell_label),
-                Paragraph("Brain MRI Scan (224x224, Min-Max)", cell_value),
-            ],
-            [
-                Paragraph("<b>Quality Control Checks:</b>", cell_label),
-                Paragraph("PASSED (Standard deviation >= 5.0, non-degenerate brain slice)", cell_value),
-                Paragraph("<b>Model Architecture:</b>", cell_label),
-                Paragraph("Multi-Scale 2.5D CNN + MobileNetV2 Latent Feature Ensemble", cell_value),
-            ],
-        ]
+            conf_pct_str = f"{float(pred_conf or 0.50) * 100:.1f}%"
+            raw_score_str = f"{prob_raw:.4f} (Threshold: {threshold:.2f})"
 
-        mri_metrics_table = Table(mri_metrics_rows, colWidths=[110, 100, 95, 115])
-        mri_metrics_table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (0, -1), bg_alt),
-            ("BACKGROUND", (2, 0), (2, -1), bg_alt),
-            ("BOX", (0, 0), (-1, -1), 0.5, border_gray),
-            ("INNERGRID", (0, 0), (-1, -1), 0.5, border_gray),
-            ("TOPPADDING", (0, 0), (-1, -1), 3),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-            ("LEFTPADDING", (0, 0), (-1, -1), 4),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 4),
-            ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ]))
+            # 1. Resolve Uploaded MRI Scan Image Flowable
+            mri_image_flowable = _resolve_mri_image_flowable(mri_filename, project_root, width=105, height=105)
 
-        # Image Container on left + Table on right
-        if mri_image_flowable:
-            img_container = [
-                mri_image_flowable,
-                Spacer(1, 2),
-                Paragraph(f"<b>Uploaded Scan:</b><br/>{Path(mri_filename).name[:20]}", image_caption),
+            # 2. MRI Data Metrics Table
+            mri_metrics_rows = [
+                [
+                    Paragraph("<b>Predicted Classification:</b>", cell_label),
+                    Paragraph(f"<font color='{dx_color}'><b>{dx_class}</b></font>", cell_value),
+                    Paragraph("<b>Model Raw Score:</b>", cell_label),
+                    Paragraph(raw_score_str, cell_value),
+                ],
+                [
+                    Paragraph("<b>Calibrated Confidence:</b>", cell_label),
+                    Paragraph(conf_pct_str, cell_value),
+                    Paragraph("<b>Input Modality:</b>", cell_label),
+                    Paragraph("Brain MRI Scan (224x224, Min-Max)", cell_value),
+                ],
+                [
+                    Paragraph("<b>Quality Control Checks:</b>", cell_label),
+                    Paragraph("PASSED (Standard deviation >= 5.0, non-degenerate brain slice)", cell_value),
+                    Paragraph("<b>Model Architecture:</b>", cell_label),
+                    Paragraph("Multi-Scale 2.5D CNN + MobileNetV2 Latent Feature Ensemble", cell_value),
+                ],
             ]
-            sec2_composite = Table([[img_container, mri_metrics_table]], colWidths=[120, 420])
-            sec2_composite.setStyle(TableStyle([
-                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-                ("TOPPADDING", (0, 0), (-1, -1), 0),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+
+            mri_metrics_table = Table(mri_metrics_rows, colWidths=[110, 100, 95, 115])
+            mri_metrics_table.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (0, -1), bg_alt),
+                ("BACKGROUND", (2, 0), (2, -1), bg_alt),
+                ("BOX", (0, 0), (-1, -1), 0.5, border_gray),
+                ("INNERGRID", (0, 0), (-1, -1), 0.5, border_gray),
+                ("TOPPADDING", (0, 0), (-1, -1), 3),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                ("LEFTPADDING", (0, 0), (-1, -1), 4),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
             ]))
-            elements.append(sec2_composite)
+
+            if mri_image_flowable:
+                img_container = [
+                    mri_image_flowable,
+                    Spacer(1, 2),
+                    Paragraph(f"<b>Uploaded Scan:</b><br/>{Path(mri_filename).name[:20]}", image_caption),
+                ]
+                sec2_composite = Table([[img_container, mri_metrics_table]], colWidths=[120, 420])
+                sec2_composite.setStyle(TableStyle([
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                    ("TOPPADDING", (0, 0), (-1, -1), 0),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                ]))
+                elements.append(sec2_composite)
+            else:
+                elements.append(mri_metrics_table)
         else:
-            elements.append(mri_metrics_table)
+            dx_class = "Not Performed"
+            conf_pct_str = "N/A"
+            sec2_pending_rows = [
+                [
+                    Paragraph("<b>Assessment Status:</b>", cell_label),
+                    Paragraph("<font color='#64748b'><b>Brain MRI Assessment Not Uploaded / Pending</b></font>", cell_value),
+                    Paragraph("<b>Input Modality:</b>", cell_label),
+                    Paragraph("Structural Brain MRI (Awaiting Upload)", cell_value),
+                ],
+                [
+                    Paragraph("<b>Clinical Note:</b>", cell_label),
+                    Paragraph("No brain MRI scan has been uploaded for this evaluation session.", cell_value),
+                    Paragraph("<b>QC Status:</b>", cell_label),
+                    Paragraph("Pending Assessment", cell_value),
+                ],
+            ]
+            sec2_pending_table = Table(sec2_pending_rows, colWidths=[120, 150, 110, 160])
+            sec2_pending_table.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (0, -1), bg_alt),
+                ("BACKGROUND", (2, 0), (2, -1), bg_alt),
+                ("BOX", (0, 0), (-1, -1), 0.5, border_gray),
+                ("INNERGRID", (0, 0), (-1, -1), 0.5, border_gray),
+                ("TOPPADDING", (0, 0), (-1, -1), 3),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                ("LEFTPADDING", (0, 0), (-1, -1), 5),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ]))
+            elements.append(sec2_pending_table)
 
         elements.append(Spacer(1, 8))
 
@@ -477,8 +511,10 @@ class PDFReportService:
 
         # Parse IASQ scores
         q_raw = assessment_data.get("questionnaire_responses")
-        s_score = 5
-        if q_raw:
+        has_q = bool(q_raw)
+        s_score = None
+
+        if has_q:
             try:
                 q_parsed = json.loads(q_raw) if isinstance(q_raw, str) else q_raw
                 s_res = q_parsed.get("score_result", {})
@@ -487,98 +523,146 @@ class PDFReportService:
             except Exception:
                 pass
 
-        cutoff1_res = (
-            "Referral Recommended (Cutoff >= 1 met) (Sensitive early-detection rule)"
-            if s_score >= 1 else "Cutoff Not Met (Score < 1)"
-        )
-        cutoff2_res = (
-            "Referral Recommended (Cutoff >= 2 met) (Higher specificity rule)"
-            if s_score >= 2 else "Cutoff Not Met (Score < 2)"
-        )
+        if has_q and s_score is not None:
+            cutoff1_res = (
+                "Referral Recommended (Cutoff >= 1 met) (Sensitive early-detection rule)"
+                if s_score >= 1 else "Cutoff Not Met (Score < 1)"
+            )
+            cutoff2_res = (
+                "Referral Recommended (Cutoff >= 2 met) (Higher specificity rule)"
+                if s_score >= 2 else "Cutoff Not Met (Score < 2)"
+            )
 
-        # Domain breakdown (standard 10-item Indian validated IASQ)
-        soc_recip = min(s_score, 3)
-        speech_comm = 1 if s_score >= 2 else 0
-        behav_patt = 1 if s_score >= 4 else 0
-        sensory = 0
+            # Domain breakdown (standard 10-item Indian validated IASQ)
+            soc_recip = min(s_score, 3)
+            speech_comm = 1 if s_score >= 2 else 0
+            behav_patt = 1 if s_score >= 4 else 0
+            sensory = 0
 
-        domain_str = (
-            f"Social Relationship and Reciprocity: {soc_recip}/6 | "
-            f"Speech-Language and Communication: {speech_comm}/1 | "
-            f"Behavior Patterns: {behav_patt}/2 | Sensory Aspects: {sensory}/1"
-        )
+            domain_str = (
+                f"Social Relationship and Reciprocity: {soc_recip}/6 | "
+                f"Speech-Language and Communication: {speech_comm}/1 | "
+                f"Behavior Patterns: {behav_patt}/2 | Sensory Aspects: {sensory}/1"
+            )
 
-        sec3_rows = [
-            [
-                Paragraph("<b>Total Positive Responses:</b>", cell_label),
-                Paragraph(f"<b>{s_score} / 10 Items</b>", cell_value),
-                Paragraph("<b>Instrument Source:</b>", cell_label),
-                Paragraph("IASQ (PMC8062015, Indian Validation)", cell_value),
-            ],
-            [
-                Paragraph("<b>Cutoff 1 (Score ≥ 1):</b>", cell_label),
-                Paragraph(cutoff1_res, cell_value),
-                Paragraph("<b>Cutoff 2 (Score ≥ 2):</b>", cell_label),
-                Paragraph(cutoff2_res, cell_value),
-            ],
-            [
-                Paragraph("<b>Domain Breakdown:</b>", cell_label),
-                Paragraph(domain_str, cell_value),
-                Paragraph("<b>Severity Categorization:</b>", cell_label),
-                Paragraph("Not Applicable (IASQ does not produce mild/mod/severe)", cell_value),
-            ],
-        ]
+            sec3_rows = [
+                [
+                    Paragraph("<b>Total Positive Responses:</b>", cell_label),
+                    Paragraph(f"<b>{s_score} / 10 Items</b>", cell_value),
+                    Paragraph("<b>Instrument Source:</b>", cell_label),
+                    Paragraph("IASQ (PMC8062015, Indian Validation)", cell_value),
+                ],
+                [
+                    Paragraph("<b>Cutoff 1 (Score ≥ 1):</b>", cell_label),
+                    Paragraph(cutoff1_res, cell_value),
+                    Paragraph("<b>Cutoff 2 (Score ≥ 2):</b>", cell_label),
+                    Paragraph(cutoff2_res, cell_value),
+                ],
+                [
+                    Paragraph("<b>Domain Breakdown:</b>", cell_label),
+                    Paragraph(domain_str, cell_value),
+                    Paragraph("<b>Severity Categorization:</b>", cell_label),
+                    Paragraph("Not Applicable (IASQ does not produce mild/mod/severe)", cell_value),
+                ],
+            ]
 
-        sec3_table = Table(sec3_rows, colWidths=[125, 145, 115, 155])
-        sec3_table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (0, -1), bg_alt),
-            ("BACKGROUND", (2, 0), (2, -1), bg_alt),
-            ("BOX", (0, 0), (-1, -1), 0.5, border_gray),
-            ("INNERGRID", (0, 0), (-1, -1), 0.5, border_gray),
-            ("TOPPADDING", (0, 0), (-1, -1), 3),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-            ("LEFTPADDING", (0, 0), (-1, -1), 5),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 5),
-            ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ]))
-        elements.append(sec3_table)
+            sec3_table = Table(sec3_rows, colWidths=[125, 145, 115, 155])
+            sec3_table.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (0, -1), bg_alt),
+                ("BACKGROUND", (2, 0), (2, -1), bg_alt),
+                ("BOX", (0, 0), (-1, -1), 0.5, border_gray),
+                ("INNERGRID", (0, 0), (-1, -1), 0.5, border_gray),
+                ("TOPPADDING", (0, 0), (-1, -1), 3),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                ("LEFTPADDING", (0, 0), (-1, -1), 5),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ]))
+            elements.append(sec3_table)
+        else:
+            sec3_pending_rows = [
+                [
+                    Paragraph("<b>Assessment Status:</b>", cell_label),
+                    Paragraph("<font color='#64748b'><b>IASQ Behavioral Screening Not Submitted / Pending</b></font>", cell_value),
+                    Paragraph("<b>Instrument Source:</b>", cell_label),
+                    Paragraph("IASQ (PMC8062015, Indian Validation)", cell_value),
+                ],
+                [
+                    Paragraph("<b>Clinical Note:</b>", cell_label),
+                    Paragraph("The 10-item caregiver behavioral questionnaire has not been submitted.", cell_value),
+                    Paragraph("<b>Referral Met:</b>", cell_label),
+                    Paragraph("Pending Screening", cell_value),
+                ],
+            ]
+            sec3_pending_table = Table(sec3_pending_rows, colWidths=[120, 150, 110, 160])
+            sec3_pending_table.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (0, -1), bg_alt),
+                ("BACKGROUND", (2, 0), (2, -1), bg_alt),
+                ("BOX", (0, 0), (-1, -1), 0.5, border_gray),
+                ("INNERGRID", (0, 0), (-1, -1), 0.5, border_gray),
+                ("TOPPADDING", (0, 0), (-1, -1), 3),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                ("LEFTPADDING", (0, 0), (-1, -1), 5),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ]))
+            elements.append(sec3_pending_table)
+
         elements.append(Spacer(1, 8))
 
         # =========================================================================
         # SECTION 4: CLINICAL SYNTHESIS & SCREENING CONCORDANCE
-        # (Multimodal completely removed as requested)
         # =========================================================================
         elements.append(Paragraph("4. CLINICAL SYNTHESIS & SCREENING CONCORDANCE", section_heading))
         elements.append(HRFlowable(width="100%", thickness=1.5, color=navy_dark, spaceBefore=1, spaceAfter=8))
 
-        is_mri_positive = (dx_class == "ASD")
-        is_iasq_positive = (s_score >= 2)
+        if has_mri and has_q and s_score is not None:
+            is_mri_positive = (dx_class == "ASD")
+            is_iasq_positive = (s_score >= 2)
 
-        if is_mri_positive and is_iasq_positive:
+            if is_mri_positive and is_iasq_positive:
+                synthesis_body = (
+                    "<b>High Concordance (Both Assessments Positive):</b> Both the Brain MRI Deep Learning model "
+                    "and the caregiver-completed IASQ screening indicate elevated probability of autism-related characteristics. "
+                    "Immediate referral for comprehensive multidisciplinary developmental assessment (including clinical autism diagnostic "
+                    "tools such as INDT-ASD, ISAA, or ADOS-2) is strongly indicated."
+                )
+            elif is_mri_positive and not is_iasq_positive:
+                synthesis_body = (
+                    "<b>Partial Concordance (Neuroimaging Finding Positive):</b> The Brain MRI Deep Learning model "
+                    "indicated elevated structural brain asymmetry patterns, while the caregiver IASQ screening score was below referral threshold. "
+                    "Clinical consultation with a pediatric neurologist or developmental pediatrician is recommended to correlate neuroimaging "
+                    "biomarkers with longitudinal clinical observation."
+                )
+            elif not is_mri_positive and is_iasq_positive:
+                synthesis_body = (
+                    "<b>Partial Concordance (Behavioral Screening Positive):</b> The caregiver IASQ screening indicated elevated behavioural "
+                    "concerns, while the structural Brain MRI Deep Learning model showed typical morphological symmetry. Clinical evaluation "
+                    "by a child psychologist or developmental pediatrician is recommended for comprehensive behavioural profiling."
+                )
+            else:
+                synthesis_body = (
+                    "<b>Concordance (Screening Negative):</b> Both the Brain MRI Deep Learning model and the caregiver-completed "
+                    "IASQ screening indicate low probability of autism-related characteristics. Routine pediatric developmental milestone monitoring "
+                    "is advised."
+                )
+        elif has_mri and not has_q:
             synthesis_body = (
-                "<b>High Concordance (Both Assessments Positive):</b> Both the Brain MRI Deep Learning model "
-                "and the caregiver-completed IASQ screening indicate elevated probability of autism-related characteristics. "
-                "Immediate referral for comprehensive multidisciplinary developmental assessment (including clinical autism diagnostic "
-                "tools such as INDT-ASD, ISAA, or ADOS-2) is strongly indicated."
+                f"<b>Partial Assessment (MRI Modality Completed):</b> Brain MRI deep learning biomarker screening was "
+                f"completed with prediction: <b>{dx_class}</b> (calibrated confidence: {conf_pct_str}). "
+                f"The complementary IASQ behavioral screening has not yet been submitted. Multi-modality clinical concordance "
+                f"will be available once caregiver questionnaire responses are recorded."
             )
-        elif is_mri_positive and not is_iasq_positive:
+        elif not has_mri and has_q and s_score is not None:
             synthesis_body = (
-                "<b>Partial Concordance (Neuroimaging Finding Positive):</b> The Brain MRI Deep Learning model "
-                "indicated elevated structural brain asymmetry patterns, while the caregiver IASQ screening score was below referral threshold. "
-                "Clinical consultation with a pediatric neurologist or developmental pediatrician is recommended to correlate neuroimaging "
-                "biomarkers with longitudinal clinical observation."
-            )
-        elif not is_mri_positive and is_iasq_positive:
-            synthesis_body = (
-                "<b>Partial Concordance (Behavioral Screening Positive):</b> The caregiver IASQ screening indicated elevated behavioural "
-                "concerns, while the structural Brain MRI Deep Learning model showed typical morphological symmetry. Clinical evaluation "
-                "by a child psychologist or developmental pediatrician is recommended for comprehensive behavioural profiling."
+                f"<b>Partial Assessment (Behavioral Modality Completed):</b> Caregiver IASQ behavioral screening was "
+                f"completed with score <b>{s_score}/10 positive items</b>. Structural brain MRI scan has not been uploaded. "
+                f"Neuroimaging biomarker correlation will be available once a brain MRI scan is submitted."
             )
         else:
             synthesis_body = (
-                "<b>Concordance (Screening Negative):</b> Both the Brain MRI Deep Learning model and the caregiver-completed "
-                "IASQ screening indicate low probability of autism-related characteristics. Routine pediatric developmental milestone monitoring "
-                "is advised."
+                "<b>No Assessments Recorded:</b> No brain MRI scan or IASQ questionnaire screening has been submitted "
+                "for this clinical session. Complete an assessment to generate clinical findings."
             )
 
         synth_box = Table([[Paragraph(synthesis_body, synthesis_text)]], colWidths=[540])

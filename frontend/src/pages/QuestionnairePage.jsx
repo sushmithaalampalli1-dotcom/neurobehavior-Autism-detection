@@ -51,34 +51,6 @@ export default function QuestionnairePage({ user, navigate, activeQuestionnaireR
     }
   };
 
-  // Quick 1-click test helpers
-  const fillSamplePositive = () => {
-    if (!schema?.items) return;
-    const newAnswers = {};
-    schema.items.forEach((item, idx) => {
-      // Set 4 items to Yes (Score = 4, Positive Screen)
-      newAnswers[item.id] = (idx === 0 || idx === 1 || idx === 4 || idx === 6);
-    });
-    setAnswers(newAnswers);
-    setUnansweredIds([]);
-    setSubjectAge('6.0');
-    setClinicalConcerns('Parent observed delayed speech milestones and repetitive motor mannerisms.');
-    setError('');
-  };
-
-  const fillSampleNegative = () => {
-    if (!schema?.items) return;
-    const newAnswers = {};
-    schema.items.forEach((item) => {
-      newAnswers[item.id] = false; // All No (Score = 0, Negative Screen)
-    });
-    setAnswers(newAnswers);
-    setUnansweredIds([]);
-    setSubjectAge('7.0');
-    setClinicalConcerns('Standard developmental checkup; no specific caregiver concerns noted.');
-    setError('');
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -252,31 +224,6 @@ export default function QuestionnairePage({ user, navigate, activeQuestionnaireR
         ) : (
           /* Intake & Questionnaire Form */
           <form onSubmit={handleSubmit} noValidate>
-            {/* Quick-fill Testing Cues */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '18px', padding: '12px 16px', background: '#f8fafc', borderRadius: 'var(--radius-md)', border: '1px solid var(--slate-200)' }}>
-              <span style={{ fontSize: '0.82rem', color: 'var(--slate-600)', fontWeight: 600 }}>
-                💡 Quick Testing Scenarios:
-              </span>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  style={{ fontSize: '0.78rem', padding: '4px 10px' }}
-                  onClick={fillSamplePositive}
-                >
-                  Sample Screen Positive (Score = 4)
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  style={{ fontSize: '0.78rem', padding: '4px 10px' }}
-                  onClick={fillSampleNegative}
-                >
-                  Sample Screen Negative (Score = 0)
-                </button>
-              </div>
-            </div>
-
             {/* Demographics Row */}
             <div className="grid-2" style={{ marginBottom: '22px' }}>
               <div className="form-group">

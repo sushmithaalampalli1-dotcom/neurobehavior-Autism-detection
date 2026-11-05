@@ -38,19 +38,16 @@ export default function ReportViewPage({ user, navigate }) {
   }, []);
 
   const handleGenerateReport = async () => {
+    if (!selectedAssessmentId && assessments.length === 0) {
+      setError('No clinical assessment records found. Complete an assessment first.');
+      return;
+    }
     setGenerating(true);
     setError('');
     setSuccessMsg('');
 
     try {
-      const payload = selectedAssessmentId
-        ? { assessment_id: selectedAssessmentId }
-        : {
-            assessment_type: 'Comprehensive Brain MRI & IASQ Behavioral Summary',
-            mri_filename: '2D_Brain_MRI_Scan.png',
-            mri_dimensions: '224 x 224 x 3',
-            questionnaire_version: 'IASQ-1.0 (Standard Caregiver Screening)',
-          };
+      const payload = { assessment_id: selectedAssessmentId };
       const res = await api.generateReport(payload);
       setLatestReport(res);
       setSuccessMsg(`Doctor-readable clinical summary generated successfully!`);
@@ -132,8 +129,23 @@ export default function ReportViewPage({ user, navigate }) {
         </div>
       </div>
 
-      {/* Live Visual Preview of Doctor-Readable Report Layout */}
-      <div className="clinical-document-canvas" style={{ border: '1px solid #cbd5e1', background: '#ffffff', borderRadius: '8px', padding: '32px 36px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+      {/* Visual Report State */}
+      {assessments.length === 0 ? (
+        <div className="card" style={{ textAlign: 'center', padding: '40px 20px', background: '#f8fafc', border: '1px dashed #cbd5e1' }}>
+          <p style={{ color: '#64748b', fontSize: '0.94rem', margin: '0 0 16px 0' }}>
+            No clinical assessment records found. Complete an MRI assessment or IASQ screening to generate an official report.
+          </p>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+            <button className="btn btn-primary" onClick={() => navigate('mri')}>
+              🧠 Upload MRI Scan
+            </button>
+            <button className="btn btn-secondary" onClick={() => navigate('questionnaire')}>
+              📋 Start Questionnaire
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="clinical-document-canvas" style={{ border: '1px solid #cbd5e1', background: '#ffffff', borderRadius: '8px', padding: '32px 36px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
         {/* Header Block */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', borderBottom: '2px solid #1e3a8a', paddingBottom: '12px' }}>
           <div>
@@ -312,6 +324,7 @@ export default function ReportViewPage({ user, navigate }) {
           </table>
         </div>
       </div>
+      )}
 
       {/* Available Generated Reports Archive */}
       <div className="card">

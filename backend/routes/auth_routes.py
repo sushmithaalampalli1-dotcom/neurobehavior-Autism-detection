@@ -99,7 +99,7 @@ def register():
     existing_by_email = User.query.filter_by(email=email).first()
     if existing_by_email is not None:
         return jsonify({
-            "error": "This email is already registered. Please sign in or click 'Forgot Password' to reset your credentials.",
+            "error": "This email is already registered and already exists. Please sign in or click 'Forgot Password' to reset your credentials.",
             "code": "ALREADY_REGISTERED"
         }), 409
 
