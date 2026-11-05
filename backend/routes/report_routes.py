@@ -57,55 +57,40 @@ def generate_report():
             assessment_data["blood_group"] = data["blood_group"]
         assessment_data["patient_email"] = current_user.email
 
-        # Cross-populate complementary modality if present for this patient
-        if record.assessment_type == "mri":
-            latest_q = Assessment.query.filter(
-                Assessment.user_id == current_user.id,
-                Assessment.assessment_type.in_(["questionnaire", "iasq"])
-            ).order_by(Assessment.created_at.desc()).first()
-            if latest_q:
-                assessment_data["questionnaire_responses"] = latest_q.questionnaire_responses
-                if latest_q.notes:
-                    q_notes = latest_q.notes
-                    cur_notes = assessment_data.get("notes") or ""
-                    assessment_data["notes"] = f"{cur_notes} | {q_notes}".strip(" |")
-        elif record.assessment_type in ["questionnaire", "iasq"]:
-            latest_m = Assessment.query.filter_by(
-                user_id=current_user.id,
-                assessment_type="mri"
-            ).order_by(Assessment.created_at.desc()).first()
-            if latest_m:
-                assessment_data["mri_filename"] = latest_m.mri_filename
-                assessment_data["mri_dimensions"] = latest_m.mri_dimensions
-                assessment_data["predicted_dx_group"] = latest_m.predicted_dx_group
-                assessment_data["prediction_confidence"] = latest_m.prediction_confidence
+        # Keep assessment modalities strictly isolated to what was actually performed
+        if record.assessment_type in ["questionnaire", "iasq"]:
+            # Questionnaire-only assessment: Do NOT cross-pollinate with previous MRI scans
+            assessment_data["mri_filename"] = None
+            assessment_data["predicted_dx_group"] = None
+            assessment_data["prediction_confidence"] = None
+            assessment_data["mri_dimensions"] = None
+        elif record.assessment_type == "mri":
+            # MRI-only assessment: Do NOT cross-pollinate with previous questionnaire responses
+            assessment_data["questionnaire_responses"] = None
+            assessment_data["questionnaire_version"] = None
     else:
-        # Auto-synthesize latest assessment data for current patient
-        latest_m = Assessment.query.filter_by(
-            user_id=current_user.id,
-            assessment_type="mri"
-        ).order_by(Assessment.created_at.desc()).first()
-        latest_q = Assessment.query.filter(
-            Assessment.user_id == current_user.id,
-            Assessment.assessment_type.in_(["questionnaire", "iasq"])
+        # Resolve the patient's single latest assessment record
+        latest_assessment = Assessment.query.filter_by(
+            user_id=current_user.id
         ).order_by(Assessment.created_at.desc()).first()
 
         # Strict validation: If patient has entered nothing, do NOT generate a dummy report
-        if not latest_m and not latest_q:
+        if not latest_assessment:
             return jsonify({
                 "error": "No assessment data available to generate a report. Please upload a brain MRI scan or submit an IASQ questionnaire first."
             }), 400
 
-        if latest_m:
-            assessment_data.update(latest_m.to_dict())
-            assessment_id = latest_m.id
-        if latest_q:
-            assessment_data["questionnaire_responses"] = latest_q.questionnaire_responses
-            if latest_q.notes:
-                cur_notes = assessment_data.get("notes") or ""
-                assessment_data["notes"] = f"{cur_notes} | {latest_q.notes}".strip(" |")
-            if not assessment_id:
-                assessment_id = latest_q.id
+        assessment_data.update(latest_assessment.to_dict())
+        assessment_id = latest_assessment.id
+
+        if latest_assessment.assessment_type in ["questionnaire", "iasq"]:
+            assessment_data["mri_filename"] = None
+            assessment_data["predicted_dx_group"] = None
+            assessment_data["prediction_confidence"] = None
+            assessment_data["mri_dimensions"] = None
+        elif latest_assessment.assessment_type == "mri":
+            assessment_data["questionnaire_responses"] = None
+            assessment_data["questionnaire_version"] = None
 
         assessment_data["id"] = f"NB-ASD-{assessment_id or '001'}"
         if data.get("patient_name"):

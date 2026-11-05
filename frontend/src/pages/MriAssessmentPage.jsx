@@ -547,7 +547,7 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
             <button
               type="button"
               className="btn btn-primary"
-              onClick={() => navigate('questionnaire')}
+              onClick={() => navigate('questionnaire', { keepMri: true })}
               style={{
                 background: '#16a34a',
                 borderColor: '#15803d',
@@ -592,7 +592,7 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
             <button
               type="button"
               className="btn btn-primary"
-              onClick={() => navigate('questionnaire')}
+              onClick={() => navigate('questionnaire', { keepMri: true })}
               style={{
                 background: '#16a34a',
                 borderColor: '#15803d',
@@ -687,7 +687,7 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
         <button
           type="button"
           className="btn"
-          onClick={() => navigate('questionnaire')}
+          onClick={() => navigate('questionnaire', { keepMri: true })}
           style={{
             background: '#22c55e',
             color: '#ffffff',

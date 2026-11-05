@@ -40,47 +40,59 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
     }
   };
 
-  // Resolve active patient's latest MRI assessment
-  const recordedMri = assessments.find((a) => a.assessment_type === 'mri');
-  const hasMri = Boolean(activeMriResult || recordedMri);
+  // Determine if viewing an active session assessment vs historical record
+  const hasActiveSession = Boolean(activeMriResult || activeQuestionnaireResult);
 
-  const mriFilename = activeMriResult?.filename || recordedMri?.mri_filename || null;
+  // When active session exists, use ONLY what was actively submitted in this workflow!
+  // If activeQuestionnaireResult is present and activeMriResult is null -> hasMri is strictly FALSE!
+  // If activeMriResult is present and activeQuestionnaireResult is null -> hasQuestionnaire is strictly FALSE!
+  const hasMri = hasActiveSession
+    ? Boolean(activeMriResult)
+    : Boolean(assessments[0]?.assessment_type === 'mri' || assessments[0]?.assessment_type === 'multimodal');
+
+  const hasQuestionnaire = hasActiveSession
+    ? Boolean(activeQuestionnaireResult)
+    : Boolean(assessments[0]?.assessment_type === 'questionnaire' || assessments[0]?.assessment_type === 'iasq' || assessments[0]?.assessment_type === 'multimodal');
+
+  // Resolve MRI assessment data (only if hasMri is true)
+  const mriFilename = hasMri
+    ? (activeMriResult?.filename || (assessments[0]?.assessment_type === 'mri' ? assessments[0]?.mri_filename : null))
+    : null;
 
   const mriAsd = hasMri && Boolean(
-    (recordedMri && recordedMri.predicted_dx_group === 1) ||
     (activeMriResult?.prediction?.dx_group === 1) ||
     (activeMriResult?.prediction?.label?.toLowerCase().includes('autism')) ||
-    (activeMriResult?.prediction?.result?.toLowerCase().includes('autism'))
+    (activeMriResult?.prediction?.result?.toLowerCase().includes('autism')) ||
+    (assessments[0]?.assessment_type === 'mri' && assessments[0]?.predicted_dx_group === 1)
   );
 
   const mriConfidence = hasMri
-    ? (recordedMri?.prediction_confidence ?? activeMriResult?.prediction?.confidence ?? null)
+    ? (activeMriResult?.prediction?.confidence ?? (assessments[0]?.assessment_type === 'mri' ? assessments[0]?.prediction_confidence : null))
     : null;
   const mriConfidencePercent = mriConfidence !== null ? (Number(mriConfidence) * 100).toFixed(1) : null;
   const mriRawScore = mriConfidence !== null ? Number(mriConfidence).toFixed(4) : null;
 
-  // Resolve active patient's latest questionnaire assessment
-  const recordedQ = assessments.find((a) => a.assessment_type === 'questionnaire' || a.assessment_type === 'iasq');
-  const hasQuestionnaire = Boolean(
-    activeQuestionnaireResult ||
-    (recordedQ && recordedQ.prediction_confidence !== null && recordedQ.prediction_confidence !== undefined)
-  );
-
+  // Resolve Questionnaire assessment data (only if hasQuestionnaire is true)
   const questScore = hasQuestionnaire
     ? (activeQuestionnaireResult?.score ??
-       (recordedQ?.prediction_confidence !== null && recordedQ?.prediction_confidence !== undefined
-         ? Math.round(recordedQ.prediction_confidence * 10)
+       (assessments[0]?.assessment_type !== 'mri' && assessments[0]?.prediction_confidence !== null && assessments[0]?.prediction_confidence !== undefined
+         ? Math.round(assessments[0].prediction_confidence * 10)
          : null))
     : null;
 
   const hasAssessment = hasMri || hasQuestionnaire;
 
-  const reportId = `NB-REP-2026-${(recordedMri?.id || recordedQ?.id || (user?.id ? `USR${user.id}` : '001'))}`;
+  const reportId = `NB-REP-2026-${(
+    (hasActiveSession ? (activeMriResult?.assessment_id || activeQuestionnaireResult?.assessment_id) : assessments[0]?.id) ||
+    (user?.id ? `USR${user.id}` : '001')
+  )}`;
   const patientId = user?.id ? `NB-PAT-2026-${String(user.id).padStart(4, '0')}` : 'NB-PAT-2026-6A5F';
   const reportDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' IST';
 
   // Resolved MRI scan preview image (No dummy replacement)
-  const mriPreviewUrl = activeMriResult?.previewUrl || (mriFilename ? `/api/mri/file/${mriFilename}` : null);
+  const mriPreviewUrl = hasMri
+    ? (activeMriResult?.previewUrl || (mriFilename ? `/api/mri/file/${mriFilename}` : null))
+    : null;
 
   // Age & Guardian calculations
   const ageNum = parseFloat(patientAge) || 21.0;
@@ -115,14 +127,16 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
     setReportSuccess(null);
 
     try {
-      const targetId = recordedMri?.id || recordedQ?.id || (assessments[0]?.id) || null;
+      const targetId = hasActiveSession
+        ? (activeMriResult?.assessment_id || activeQuestionnaireResult?.assessment_id || null)
+        : (assessments[0]?.id || null);
       const payload = {
         assessment_id: targetId,
         patient_name: patientName.trim(),
         patient_age: String(ageCheck.ageNum),
         patient_gender: patientGender,
         blood_group: bloodGroup,
-        mri_filename: mriFilename || 'Awaiting Scan Upload',
+        mri_filename: hasMri ? mriFilename : null,
         clinical_notes: 'Screening report generated from patient evaluation session.',
       };
       const res = await api.generateReport(payload);
