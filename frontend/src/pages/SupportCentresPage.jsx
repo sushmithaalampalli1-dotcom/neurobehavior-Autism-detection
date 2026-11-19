@@ -64,14 +64,6 @@ const PROXIMITY_OPTIONS = [
   { id: '500', label: 'Within 500 km (Inter-State)', km: 500 },
 ];
 
-const SPECIALTY_FILTERS = [
-  { id: 'all', label: '🌟 All Care Specialties' },
-  { id: 'neuro', label: '🧠 Pediatric Neurology & MRI' },
-  { id: 'speech', label: '🗣 Speech & Language Therapy' },
-  { id: 'ot', label: '🧩 Occupational & Sensory Therapy' },
-  { id: 'apex', label: '🏛 Apex Research & Teaching Institutes' },
-];
-
 export default function SupportCentresPage({ navigate }) {
   const [allCentres, setAllCentres] = useState([]);
   const [cityFilter, setCityFilter] = useState('');
@@ -79,7 +71,6 @@ export default function SupportCentresPage({ navigate }) {
   const [userLocation, setUserLocation] = useState({ latitude: 12.9716, longitude: 77.5946 }); // Default: Bengaluru medical hub
   const [selectedCityName, setSelectedCityName] = useState('Bengaluru (Default Patient Location)');
   const [radiusFilter, setRadiusFilter] = useState('all');
-  const [specialtyFilter, setSpecialtyFilter] = useState('all');
   const [locating, setLocating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -137,30 +128,6 @@ export default function SupportCentresPage({ navigate }) {
       list.sort((a, b) => (a.distance_km || 99999) - (b.distance_km || 99999));
     }
 
-    // Apply specialty filter
-    if (specialtyFilter !== 'all') {
-      list = list.filter((c) => {
-        const svcs = (c.services_offered || []).join(' ').toLowerCase();
-        const ftype = (c.facility_type || '').toLowerCase();
-        const name = (c.name || '').toLowerCase();
-        const combined = `${svcs} ${ftype} ${name}`;
-
-        if (specialtyFilter === 'neuro') {
-          return combined.includes('neuro') || combined.includes('mri') || combined.includes('pediatric');
-        }
-        if (specialtyFilter === 'speech') {
-          return combined.includes('speech') || combined.includes('language') || combined.includes('communication');
-        }
-        if (specialtyFilter === 'ot') {
-          return combined.includes('sensory') || combined.includes('occupational') || combined.includes('behavior');
-        }
-        if (specialtyFilter === 'apex') {
-          return combined.includes('apex') || combined.includes('national') || combined.includes('institute') || combined.includes('government') || combined.includes('college');
-        }
-        return true;
-      });
-    }
-
     // Apply city text search if specified
     if (cityFilter.trim()) {
       const term = cityFilter.trim().toLowerCase();
@@ -180,7 +147,7 @@ export default function SupportCentresPage({ navigate }) {
     }
 
     return list;
-  }, [allCentres, userLocation, cityFilter, radiusFilter, specialtyFilter]);
+  }, [allCentres, userLocation, cityFilter, radiusFilter]);
 
   // Proximity count buckets
   const counts = useMemo(() => {
@@ -608,7 +575,6 @@ export default function SupportCentresPage({ navigate }) {
                     setUserLocation({ latitude: 12.9716, longitude: 77.5946 });
                     setSelectedCityName('Bengaluru (Default Patient Location)');
                     setRadiusFilter('all');
-                    setSpecialtyFilter('all');
                     setLocationNotice('Patient location reset to Bengaluru medical hub.');
                   }}
                   style={{ fontSize: '0.85rem', padding: '6px 12px' }}
@@ -673,7 +639,7 @@ export default function SupportCentresPage({ navigate }) {
           </div>
         )}
 
-        {/* Multi-Scale Proximity Bands & Clinical Specialty Filter */}
+        {/* Multi-Scale Proximity Bands & Hospital Search */}
         <div style={{ marginTop: '18px', paddingTop: '16px', borderTop: '1px solid var(--slate-200)' }}>
           {/* Proximity Bands */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
@@ -715,32 +681,10 @@ export default function SupportCentresPage({ navigate }) {
             })}
           </div>
 
-          {/* Clinical Care Specialty Filter & Hospital Search */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--navy)' }}>Care Specialty:</span>
-              {SPECIALTY_FILTERS.map((sp) => {
-                const isActive = specialtyFilter === sp.id;
-                return (
-                  <button
-                    key={sp.id}
-                    type="button"
-                    onClick={() => setSpecialtyFilter(sp.id)}
-                    style={{
-                      background: isActive ? '#0f172a' : '#ffffff',
-                      color: isActive ? '#ffffff' : 'var(--slate-700)',
-                      border: isActive ? '1px solid #0f172a' : '1px solid var(--slate-300)',
-                      borderRadius: 'var(--radius-sm)',
-                      padding: '5px 12px',
-                      fontSize: '0.78rem',
-                      fontWeight: isActive ? 700 : 500,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {sp.label}
-                  </button>
-                );
-              })}
+          {/* Hospital Search */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--slate-200)' }}>
+            <div style={{ fontSize: '0.84rem', color: 'var(--slate-600)' }}>
+              🏥 Search accredited neurological hospitals and centers across India:
             </div>
 
             {/* City or Hospital name filter */}
@@ -748,10 +692,10 @@ export default function SupportCentresPage({ navigate }) {
               <input
                 type="text"
                 className="form-input"
-                placeholder="Search hospital name or city..."
+                placeholder="Search hospital name, city, or state..."
                 value={cityFilter}
                 onChange={(e) => setCityFilter(e.target.value)}
-                style={{ width: '230px', padding: '6px 12px', fontSize: '0.84rem' }}
+                style={{ width: '280px', padding: '6px 12px', fontSize: '0.84rem' }}
               />
               {cityFilter && (
                 <button
@@ -759,6 +703,7 @@ export default function SupportCentresPage({ navigate }) {
                   className="btn btn-outline"
                   onClick={() => setCityFilter('')}
                   style={{ padding: '6px 10px', fontSize: '0.8rem' }}
+                  title="Clear search"
                 >
                   ✕
                 </button>
@@ -853,16 +798,16 @@ export default function SupportCentresPage({ navigate }) {
           ) : annotatedCentres.length === 0 ? (
             <div className="card" style={{ textAlign: 'center', padding: '36px 20px' }}>
               <p style={{ color: 'var(--slate-700)', fontSize: '0.94rem', fontWeight: 600 }}>
-                No hospitals found within {radiusFilter !== 'all' ? `${radiusFilter} km` : 'this search'} for the selected specialty.
+                No hospitals found within {radiusFilter !== 'all' ? `${radiusFilter} km` : 'this search'}.
               </p>
               <p style={{ color: 'var(--slate-500)', fontSize: '0.84rem', marginTop: '6px' }}>
-                Try selecting a wider proximity band or clear the care specialty filter.
+                Try selecting a wider proximity band or clearing the search text.
               </p>
               <button
                 type="button"
                 className="btn btn-secondary"
                 style={{ marginTop: '14px' }}
-                onClick={() => { setRadiusFilter('all'); setSpecialtyFilter('all'); setCityFilter(''); }}
+                onClick={() => { setRadiusFilter('all'); setCityFilter(''); }}
               >
                 Show All Accredited Hospitals ({counts.total})
               </button>
