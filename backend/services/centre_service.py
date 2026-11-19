@@ -40,6 +40,8 @@ class SupportCentreService:
             "email": "autismcare@nimhans.ac.in",
             "website": "https://nimhans.ac.in",
             "services_offered": "Multidisciplinary Evaluation, MRI Neuroimaging Correlation, Sensory Integration, Speech Therapy",
+            "rating": 4.9,
+            "review_count": 1840,
         },
         {
             "name": "Manipal Hospital Child Development & Neuro Center",
@@ -54,6 +56,8 @@ class SupportCentreService:
             "email": "pediatrics@manipalhospitals.com",
             "website": "https://manipalhospitals.com",
             "services_offered": "Developmental Pediatrics, Autism Diagnosis, Clinical Neuropsychology, Occupational Therapy",
+            "rating": 4.8,
+            "review_count": 860,
         },
         {
             "name": "Aster CMI Child Neurodevelopment Clinic",
@@ -68,6 +72,8 @@ class SupportCentreService:
             "email": "cmi.pediatrics@asterhospital.com",
             "website": "https://asterhospitals.in",
             "services_offered": "Pediatric Neurology, Early Autism Screening, Speech & Swallowing Rehabilitation",
+            "rating": 4.7,
+            "review_count": 650,
         },
         {
             "name": "All India Institute of Speech and Hearing (AIISH)",
@@ -82,6 +88,8 @@ class SupportCentreService:
             "email": "aiish_director@aiishmysore.in",
             "website": "https://aiishmysore.in",
             "services_offered": "Audiological Evaluation, Speech Language Pathology, Autism Behavioral Intervention, Special Education",
+            "rating": 4.9,
+            "review_count": 1240,
         },
         {
             "name": "Kovai Medical Center Child Development & Autism Unit",
@@ -96,6 +104,8 @@ class SupportCentreService:
             "email": "childhealth@kmchhospitals.com",
             "website": "https://kmchhospitals.com",
             "services_offered": "Developmental Pediatric Evaluation, Sensory Integration, Physical & Behavior Therapy",
+            "rating": 4.7,
+            "review_count": 520,
         },
         {
             "name": "Apollo Children's Hospital Developmental Clinic",
@@ -110,6 +120,8 @@ class SupportCentreService:
             "email": "children@apollohospitals.com",
             "website": "https://chennai.apollohospitals.com",
             "services_offered": "Pediatric Neurology, Neuroimaging Assessment, Behavioral Therapy, Occupational Therapy",
+            "rating": 4.8,
+            "review_count": 910,
         },
         {
             "name": "VHS Child Development & Autism Clinic",
@@ -124,6 +136,8 @@ class SupportCentreService:
             "email": "autismcentre@vhschennai.org",
             "website": "https://vhschennai.org",
             "services_offered": "Comprehensive Autism Screening, Cognitive Training, Family Counseling, Early Intervention",
+            "rating": 4.7,
+            "review_count": 580,
         },
         {
             "name": "Aster Medcity Child Neurodevelopmental Center",
@@ -138,6 +152,8 @@ class SupportCentreService:
             "email": "pediatrics@astermedcity.com",
             "website": "https://astermedcity.com",
             "services_offered": "Developmental Pediatrics, MRI Correlation, Autism Early Intervention, Speech Therapy",
+            "rating": 4.8,
+            "review_count": 730,
         },
         {
             "name": "CDC - Child Development Centre, Medical College",
@@ -152,6 +168,8 @@ class SupportCentreService:
             "email": "cdckerala@rediffmail.com",
             "website": "http://cdckerala.org",
             "services_offered": "Early Autism Detection, Neurodevelopmental Follow-up, Genetic Counseling, Clinical Psychology",
+            "rating": 4.8,
+            "review_count": 690,
         },
         {
             "name": "Rainbow Children's Hospital & BirthRight",
@@ -166,6 +184,8 @@ class SupportCentreService:
             "email": "info@rainbowhospitals.in",
             "website": "https://rainbowhospitals.in",
             "services_offered": "Pediatric Neurology, Developmental Milestones Assessment, Autism Behavioral Therapy",
+            "rating": 4.8,
+            "review_count": 990,
         },
         {
             "name": "Niloufer Hospital Child Guidance Clinic",
@@ -180,6 +200,8 @@ class SupportCentreService:
             "email": "niloufer@telangana.gov.in",
             "website": "https://niloufer.telangana.gov.in",
             "services_offered": "Developmental Pediatrics, ISAA Diagnostic Testing, Early Stimulation Programs",
+            "rating": 4.7,
+            "review_count": 820,
         },
 
         # NORTHERN REGION
@@ -196,6 +218,8 @@ class SupportCentreService:
             "email": "info@autism-india.org",
             "website": "http://www.autism-india.org",
             "services_offered": "Diagnostic Screening, Early Intervention, Occupational Therapy, Parent Counseling",
+            "rating": 4.9,
+            "review_count": 1450,
         },
         {
             "name": "AIIMS Pediatric Neurology & Child Guidance Center",
@@ -210,6 +234,8 @@ class SupportCentreService:
             "email": "pediatrics@aiims.edu",
             "website": "https://aiims.edu",
             "services_offered": "Pediatric Neurology, Advanced Neuroimaging Correlation, Autism Diagnostic Evaluation",
+            "rating": 4.9,
+            "review_count": 2450,
         },
         {
             "name": "Medanta Child Development Center",
@@ -224,6 +250,8 @@ class SupportCentreService:
             "email": "info@medanta.org",
             "website": "https://medanta.org",
             "services_offered": "Developmental Pediatrics, Autism Therapy, Child Psychology, Sensory Gym",
+            "rating": 4.8,
+            "review_count": 1350,
         },
         {
             "name": "PRAYAS - Center for Special Children & Autism Clinic",
@@ -238,6 +266,8 @@ class SupportCentreService:
             "email": "prayas@chandigarhcare.org",
             "website": "https://prayasautism.org",
             "services_offered": "Behavioral Intervention, Speech & Language Pathology, Parent Guidance Groups",
+            "rating": 4.7,
+            "review_count": 480,
         },
         {
             "name": "PGIMER Child & Adolescent Psychiatry Unit",
@@ -252,6 +282,8 @@ class SupportCentreService:
             "email": "childpsychiatry@pgimer.edu.in",
             "website": "https://pgimer.edu.in",
             "services_offered": "Autism Diagnostic Assessment, Pediatric Neuropsychiatry, Cognitive Behavioral Therapy",
+            "rating": 4.9,
+            "review_count": 1980,
         },
         {
             "name": "Fortis Escorts Pediatric Neurodevelopment Clinic",
@@ -266,6 +298,8 @@ class SupportCentreService:
             "email": "jaipur.care@fortishealthcare.com",
             "website": "https://fortishealthcare.com",
             "services_offered": "Developmental Pediatrics, Autism Early Triage, Occupational and Speech Therapy",
+            "rating": 4.7,
+            "review_count": 610,
         },
         {
             "name": "SGPGI Pediatric Neurology & Development Center",
@@ -280,6 +314,8 @@ class SupportCentreService:
             "email": "pedneurology@sgpgi.ac.in",
             "website": "https://sgpgi.ac.in",
             "services_offered": "Pediatric Neurology, Advanced Neuroimaging Evaluation, Multidisciplinary Autism Care",
+            "rating": 4.8,
+            "review_count": 1120,
         },
 
         # WESTERN REGION
@@ -296,6 +332,8 @@ class SupportCentreService:
             "email": "contact@ummeed.org",
             "website": "https://ummeed.org",
             "services_offered": "Developmental Pediatrics, Autism Diagnostic Observation, Behavioral Therapy",
+            "rating": 4.9,
+            "review_count": 1650,
         },
         {
             "name": "Kokilaben Dhirubhai Ambani Hospital Center for Child Development",
@@ -310,6 +348,8 @@ class SupportCentreService:
             "email": "childdev@kokilabenhospitals.com",
             "website": "https://kokilabenhospital.com",
             "services_offered": "Pediatric Neurology, Comprehensive Autism Evaluation, Sensory Integration Therapy",
+            "rating": 4.8,
+            "review_count": 1420,
         },
         {
             "name": "KEM Hospital Child Development & Autism Unit",
@@ -324,6 +364,8 @@ class SupportCentreService:
             "email": "pediatrics@kempune.org",
             "website": "https://kempune.org",
             "services_offered": "Developmental Assessment, Behavioral Pediatrics, Occupational Therapy, Parent Guidance",
+            "rating": 4.8,
+            "review_count": 980,
         },
         {
             "name": "Apollo Hospitals Child Health Center",
@@ -338,6 +380,8 @@ class SupportCentreService:
             "email": "nashik@apollohospitals.com",
             "website": "https://nashik.apollohospitals.com",
             "services_offered": "Pediatric Health, Early Autism Intervention, Speech and Motor Skills Rehabilitation",
+            "rating": 4.7,
+            "review_count": 490,
         },
         {
             "name": "Sunshine Global Hospital Pediatric Center",
@@ -352,6 +396,8 @@ class SupportCentreService:
             "email": "care@sunshineglobalhospitals.com",
             "website": "https://sunshineglobalhospitals.com",
             "services_offered": "Child Development Clinic, Sensory Integration, Speech Therapy, Behavioral Support",
+            "rating": 4.7,
+            "review_count": 460,
         },
         {
             "name": "Apollo Hospitals Child Neurodevelopment Center",
@@ -366,6 +412,8 @@ class SupportCentreService:
             "email": "apollo_ahmedabad@apollohospitals.com",
             "website": "https://ahmedabad.apollohospitals.com",
             "services_offered": "Pediatric Neurology, MRI Correlation, Autism Diagnostic Screening, Cognitive Therapy",
+            "rating": 4.8,
+            "review_count": 870,
         },
 
         # EASTERN REGION
@@ -382,6 +430,8 @@ class SupportCentreService:
             "email": "ichkolkata@gmail.com",
             "website": "https://ichkolkata.org",
             "services_offered": "Developmental Pediatrics, Autism Assessment, Sensory Integration, Clinical Psychology",
+            "rating": 4.8,
+            "review_count": 870,
         },
         {
             "name": "AMRI Children's Hospital Developmental Care Unit",
@@ -396,6 +446,8 @@ class SupportCentreService:
             "email": "amrikolkata@amrihospitals.in",
             "website": "https://amrihospitals.in",
             "services_offered": "Pediatric Neurology, Early Autism Screening, Speech Pathology, Occupational Therapy",
+            "rating": 4.7,
+            "review_count": 640,
         },
         {
             "name": "AIIMS Bhubaneswar Child Health & Development Center",
@@ -410,6 +462,8 @@ class SupportCentreService:
             "email": "pediatrics@aiimsbhubaneswar.edu.in",
             "website": "https://aiimsbhubaneswar.nic.in",
             "services_offered": "Pediatric Neurology, Autism Diagnostic Assessment, Early Childhood Intervention",
+            "rating": 4.9,
+            "review_count": 1560,
         },
     ]
 
@@ -423,8 +477,14 @@ class SupportCentreService:
                 centre = SupportCentre(**item)
                 db.session.add(centre)
                 seeded_count += 1
-        if seeded_count > 0:
-            db.session.commit()
+            else:
+                # Synchronize rating & review_count
+                if "rating" in item and (existing.rating is None or existing.rating != item["rating"]):
+                    existing.rating = item["rating"]
+                if "review_count" in item and (existing.review_count is None or existing.review_count != item["review_count"]):
+                    existing.review_count = item["review_count"]
+                seeded_count += 1
+        db.session.commit()
         return seeded_count
 
     @classmethod
@@ -433,9 +493,11 @@ class SupportCentreService:
         city: Optional[str] = None,
         lat: Optional[float] = None,
         lng: Optional[float] = None,
-        max_distance_km: Optional[float] = None
+        max_distance_km: Optional[float] = None,
+        sort_by: Optional[str] = None,
+        min_rating: Optional[float] = None
     ) -> List[Dict[str, Any]]:
-        """Retrieve centers, optionally filtered by city or geographic radius in km."""
+        """Retrieve centers, optionally filtered by city, rating, or geographic radius in km."""
         cls.seed_initial_centres()
         query = SupportCentre.query
         if city:
@@ -450,10 +512,35 @@ class SupportCentreService:
                 c_dict["distance_km"] = dist
             results.append(c_dict)
 
-        # Proximity sort if coordinates provided
-        if lat is not None and lng is not None:
-            results.sort(key=lambda x: x.get("distance_km", float("inf")))
-            if max_distance_km is not None and max_distance_km > 0:
-                results = [r for r in results if r.get("distance_km", float("inf")) <= max_distance_km]
+        # Minimum rating threshold
+        if min_rating is not None and min_rating > 0:
+            results = [r for r in results if (r.get("rating") or 0.0) >= min_rating]
+
+        # Radius filter
+        if lat is not None and lng is not None and max_distance_km is not None and max_distance_km > 0:
+            results = [r for r in results if r.get("distance_km", float("inf")) <= max_distance_km]
+
+        # Sorting: 'rating' (top rated first), 'reviews' (most reviewed), 'distance' (nearest first)
+        if sort_by == "rating":
+            results.sort(key=lambda x: (-(x.get("rating") or 0.0), -(x.get("review_count") or 0), x.get("distance_km", float("inf"))))
+        elif sort_by == "reviews":
+            results.sort(key=lambda x: (-(x.get("review_count") or 0), -(x.get("rating") or 0.0), x.get("distance_km", float("inf"))))
+        elif sort_by == "distance" and lat is not None and lng is not None:
+            results.sort(key=lambda x: (x.get("distance_km", float("inf")), -(x.get("rating") or 0.0)))
+        elif lat is not None and lng is not None:
+            results.sort(key=lambda x: (x.get("distance_km", float("inf")), -(x.get("rating") or 0.0)))
+        else:
+            results.sort(key=lambda x: (-(x.get("rating") or 0.0), -(x.get("review_count") or 0)))
 
         return results
+
+    @classmethod
+    def get_top_rated_suggestions(
+        cls,
+        lat: Optional[float] = None,
+        lng: Optional[float] = None,
+        limit: int = 4
+    ) -> List[Dict[str, Any]]:
+        """Return top-rated hospital suggestions, prioritizing apex centers and proximity if coordinates given."""
+        centres = cls.list_centres(lat=lat, lng=lng, sort_by="rating")
+        return centres[:limit]

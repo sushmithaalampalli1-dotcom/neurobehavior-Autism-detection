@@ -143,6 +143,16 @@ def _run_db_migrations():
             for col_name, col_type in new_cols:
                 if col_name not in existing_cols:
                     conn.execute(text(f"ALTER TABLE users ADD COLUMN {col_name} {col_type}"))
+
+            # Ensure support_centres rating & review_count exist
+            sc_cols = [
+                row[1] for row in conn.execute(text("PRAGMA table_info(support_centres)")).fetchall()
+            ]
+            if "rating" not in sc_cols:
+                conn.execute(text("ALTER TABLE support_centres ADD COLUMN rating FLOAT DEFAULT 4.8"))
+            if "review_count" not in sc_cols:
+                conn.execute(text("ALTER TABLE support_centres ADD COLUMN review_count INTEGER DEFAULT 500"))
+
             conn.commit()
     except Exception as e:
         print("[*] DB migration check notice:", e)

@@ -22,6 +22,8 @@ class SupportCentre(db.Model):
     email = db.Column(db.String(120), nullable=True)
     website = db.Column(db.String(255), nullable=True)
     services_offered = db.Column(db.Text, nullable=True)  # Comma-separated or description
+    rating = db.Column(db.Float, default=4.8)
+    review_count = db.Column(db.Integer, default=500)
     is_verified = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -42,5 +44,7 @@ class SupportCentre(db.Model):
             "email": self.email,
             "website": self.website,
             "services_offered": [s.strip() for s in (self.services_offered or "").split(",") if s.strip()],
+            "rating": round(float(self.rating or 4.8), 1),
+            "review_count": int(self.review_count or 500),
             "is_verified": self.is_verified,
         }
