@@ -153,7 +153,19 @@ def _seed_demo_personas():
     from backend.models.user import User
     from backend.models.assessment import Assessment
     demo_users = [
-        {"email": "patient@demo.neurobehavior.org", "name": "Demo Patient", "role": "patient", "pass": "password123"},
+        {
+            "email": "patient@demo.neurobehavior.org",
+            "name": "Demo Patient",
+            "role": "patient",
+            "pass": "password123",
+            "age": 21.0,
+            "gender": "Female",
+            "blood_group": "B-",
+            "phone": "+91 98765 43210",
+            "parent_name": "Rajesh Sharma",
+            "parent_phone": "+91 91234 56789",
+            "parent_relation": "Father",
+        },
         {"email": "admin@demo.neurobehavior.org", "name": "System Administrator", "role": "admin", "pass": "admin123"},
     ]
     for d in demo_users:
@@ -161,8 +173,38 @@ def _seed_demo_personas():
         if not u:
             u = User(full_name=d["name"], email=d["email"], role=d["role"])
             u.set_password(d["pass"])
+            if d.get("age"):
+                u.age = d["age"]
+            if d.get("gender"):
+                u.gender = d["gender"]
+            if d.get("blood_group"):
+                u.blood_group = d["blood_group"]
+            if d.get("phone"):
+                u.phone_number = d["phone"]
+            if d.get("parent_name"):
+                u.parent_name = d["parent_name"]
+            if d.get("parent_phone"):
+                u.parent_phone = d["parent_phone"]
+            if d.get("parent_relation"):
+                u.parent_relation = d["parent_relation"]
             db.session.add(u)
             db.session.flush()
+        else:
+            # Update existing demo persona with complete registration details
+            if d.get("age") and not u.age:
+                u.age = d["age"]
+            if d.get("gender") and not u.gender:
+                u.gender = d["gender"]
+            if d.get("blood_group") and not u.blood_group:
+                u.blood_group = d["blood_group"]
+            if d.get("phone") and not u.phone_number:
+                u.phone_number = d["phone"]
+            if d.get("parent_name") and not u.parent_name:
+                u.parent_name = d["parent_name"]
+            if d.get("parent_phone") and not u.parent_phone:
+                u.parent_phone = d["parent_phone"]
+            if d.get("parent_relation") and not u.parent_relation:
+                u.parent_relation = d["parent_relation"]
         # Ensure demo patient starts with an empty assessment slate so no stale MRI/report is shown
         if u and u.role == "patient":
             Assessment.query.filter_by(user_id=u.id).delete()

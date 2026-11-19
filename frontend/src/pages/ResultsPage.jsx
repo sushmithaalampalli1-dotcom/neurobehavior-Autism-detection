@@ -9,16 +9,15 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
   const [generating, setGenerating] = useState(false);
   const [reportSuccess, setReportSuccess] = useState(null);
 
-  // Patient demographic fields strictly matching authenticated registration profile
-  const [patientName, setPatientName] = useState(() => user?.full_name || '');
-  const [patientAge, setPatientAge] = useState(() => (user?.age ? String(user.age) : ''));
-  const [patientGender, setPatientGender] = useState(() => user?.gender || '');
-  const [bloodGroup, setBloodGroup] = useState(() => user?.blood_group || '');
-
-  const registeredName = user?.full_name || patientName || 'Registered Patient';
-  const registeredAge = (user?.age !== undefined && user?.age !== null && user?.age !== '') ? String(user.age) : (patientAge || '21.0');
-  const registeredGender = user?.gender || patientGender || 'Female';
-  const registeredBloodGroup = user?.blood_group || bloodGroup || 'B-';
+  // Patient demographic and contact fields strictly sourced from authenticated registration profile
+  const registeredName = user?.full_name || 'Registered Patient';
+  const registeredAge = (user?.age !== undefined && user?.age !== null && user?.age !== '') ? String(user.age) : '21.0';
+  const registeredGender = user?.gender || 'Female';
+  const registeredBloodGroup = user?.blood_group || 'B-';
+  const registeredPhone = user?.phone_number || '';
+  const registeredParentName = user?.parent_name || '';
+  const registeredParentPhone = user?.parent_phone || '';
+  const registeredParentRelation = user?.parent_relation || '';
 
   useEffect(() => {
     loadAssessments();
@@ -68,10 +67,6 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
   // Resolve Questionnaire assessment data (strictly from active session)
   const questScore = hasQuestionnaire ? (activeQuestionnaireResult?.score ?? null) : null;
 
-  const reportId = `NB-REP-2026-${(
-    (activeMriResult?.assessment_id || activeQuestionnaireResult?.assessment_id) ||
-    (user?.id ? `USR${user.id}` : '001')
-  )}`;
   const reportDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' IST';
 
   // Resolved MRI scan preview image (Direct base64, URL, or API endpoint)
@@ -82,11 +77,11 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
        (mriFilename ? `/api/mri/file/${mriFilename}` : null))
     : null;
 
-  // Registered patient details
+  // Registered patient and guardian details strictly from registration profile
   const ageNum = parseFloat(registeredAge) || 21.0;
-  const patientPhone = user?.phone_number || 'Not Specified';
-  const guardianDetails = user?.parent_name
-    ? `${user.parent_name} (${user.parent_relation || 'Parent/Guardian'})${user.parent_phone ? ` - Ph: ${user.parent_phone}` : ''}`
+  const patientPhone = registeredPhone || 'Not Specified';
+  const guardianDetails = registeredParentName
+    ? `${registeredParentName}${registeredParentRelation ? ` (${registeredParentRelation})` : ''}${registeredParentPhone ? ` - Ph: ${registeredParentPhone}` : ''}`
     : 'Not Specified';
 
   const handleGenerateReport = async () => {
@@ -110,6 +105,9 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
         patient_gender: registeredGender,
         blood_group: registeredBloodGroup,
         patient_phone: patientPhone,
+        parent_name: registeredParentName,
+        parent_phone: registeredParentPhone,
+        parent_relation: registeredParentRelation,
         mri_filename: hasMri ? mriFilename : null,
         image_base64: hasMri ? (activeMriResult?.image_base64 || activeMriResult?.previewUrl) : null,
         clinical_notes: 'Screening report generated from patient evaluation session.',
@@ -303,7 +301,6 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
             </div>
 
             <div style={{ textAlign: 'right', fontSize: '0.84rem', color: '#0f172a', lineHeight: 1.5 }}>
-              <div><strong>Report ID:</strong> {reportId}</div>
               <div><strong>Date:</strong> {reportDate}</div>
             </div>
           </div>

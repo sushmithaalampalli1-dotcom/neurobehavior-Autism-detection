@@ -24,16 +24,16 @@ def generate_report():
         "image_base64": data.get("image_base64") or data.get("previewUrl"),
         "overlay_base64": data.get("overlay_base64") or data.get("gradcam_base64"),
         "questionnaire_version": data.get("questionnaire_version", "IASQ-1.0 (Standard Caregiver Screening)"),
-        "patient_name": data.get("patient_name") or current_user.full_name,
+        "patient_name": current_user.full_name or data.get("patient_name") or "Registered Patient",
         "patient_email": current_user.email,
         "patient_id": current_user.id,
-        "patient_phone": getattr(current_user, "phone_number", None),
-        "parent_name": data.get("parent_name") or getattr(current_user, "parent_name", None),
-        "parent_phone": data.get("parent_phone") or getattr(current_user, "parent_phone", None),
-        "parent_relation": data.get("parent_relation") or getattr(current_user, "parent_relation", None),
-        "age": data.get("age") or data.get("patient_age") or getattr(current_user, "age", None) or 21.0,
-        "gender": data.get("gender") or data.get("patient_gender") or getattr(current_user, "gender", None) or "Female",
-        "blood_group": data.get("blood_group") or getattr(current_user, "blood_group", None) or "B-",
+        "patient_phone": getattr(current_user, "phone_number", None) or data.get("patient_phone"),
+        "parent_name": getattr(current_user, "parent_name", None) or data.get("parent_name"),
+        "parent_phone": getattr(current_user, "parent_phone", None) or data.get("parent_phone"),
+        "parent_relation": getattr(current_user, "parent_relation", None) or data.get("parent_relation"),
+        "age": getattr(current_user, "age", None) or data.get("age") or data.get("patient_age") or 21.0,
+        "gender": getattr(current_user, "gender", None) or data.get("gender") or data.get("patient_gender") or "Female",
+        "blood_group": getattr(current_user, "blood_group", None) or data.get("blood_group") or "B-",
     }
 
     if assessment_id:
@@ -49,14 +49,16 @@ def generate_report():
             }), 403
 
         assessment_data.update(record.to_dict())
-        if data.get("patient_name"):
-            assessment_data["patient_name"] = data["patient_name"]
-        if data.get("age") or data.get("patient_age"):
-            assessment_data["age"] = data.get("age") or data.get("patient_age")
-        if data.get("gender") or data.get("patient_gender"):
-            assessment_data["gender"] = data.get("gender") or data.get("patient_gender")
-        if data.get("blood_group"):
-            assessment_data["blood_group"] = data["blood_group"]
+        # Strictly enforce registered user credentials from current_user
+        assessment_data["patient_name"] = current_user.full_name or data.get("patient_name") or "Registered Patient"
+        assessment_data["patient_email"] = current_user.email
+        assessment_data["patient_phone"] = getattr(current_user, "phone_number", None) or data.get("patient_phone")
+        assessment_data["parent_name"] = getattr(current_user, "parent_name", None) or data.get("parent_name")
+        assessment_data["parent_phone"] = getattr(current_user, "parent_phone", None) or data.get("parent_phone")
+        assessment_data["parent_relation"] = getattr(current_user, "parent_relation", None) or data.get("parent_relation")
+        assessment_data["age"] = getattr(current_user, "age", None) or data.get("age") or data.get("patient_age") or 21.0
+        assessment_data["gender"] = getattr(current_user, "gender", None) or data.get("gender") or data.get("patient_gender") or "Female"
+        assessment_data["blood_group"] = getattr(current_user, "blood_group", None) or data.get("blood_group") or "B-"
         if data.get("image_base64"):
             assessment_data["image_base64"] = data["image_base64"]
         if data.get("overlay_base64"):
@@ -107,15 +109,15 @@ def generate_report():
             assessment_data["questionnaire_version"] = None
 
         assessment_data["id"] = f"NB-ASD-{assessment_id or '001'}"
-        assessment_data["patient_name"] = data.get("patient_name") or current_user.full_name
+        assessment_data["patient_name"] = current_user.full_name or data.get("patient_name") or "Registered Patient"
         assessment_data["patient_email"] = current_user.email
-        assessment_data["patient_phone"] = getattr(current_user, "phone_number", None)
+        assessment_data["patient_phone"] = getattr(current_user, "phone_number", None) or data.get("patient_phone")
         assessment_data["parent_name"] = getattr(current_user, "parent_name", None) or data.get("parent_name")
         assessment_data["parent_phone"] = getattr(current_user, "parent_phone", None) or data.get("parent_phone")
         assessment_data["parent_relation"] = getattr(current_user, "parent_relation", None) or data.get("parent_relation")
-        assessment_data["age"] = data.get("age") or data.get("patient_age") or getattr(current_user, "age", None) or 21.0
-        assessment_data["gender"] = data.get("gender") or data.get("patient_gender") or getattr(current_user, "gender", None) or "Female"
-        assessment_data["blood_group"] = data.get("blood_group") or getattr(current_user, "blood_group", None) or "B-"
+        assessment_data["age"] = getattr(current_user, "age", None) or data.get("age") or data.get("patient_age") or 21.0
+        assessment_data["gender"] = getattr(current_user, "gender", None) or data.get("gender") or data.get("patient_gender") or "Female"
+        assessment_data["blood_group"] = getattr(current_user, "blood_group", None) or data.get("blood_group") or "B-"
         if data.get("image_base64"):
             assessment_data["image_base64"] = data["image_base64"]
         if data.get("overlay_base64"):

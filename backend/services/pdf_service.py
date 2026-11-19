@@ -298,9 +298,6 @@ class PDFReportService:
         # =========================================================================
         # PAGE 1: HEADER BLOCK
         # =========================================================================
-        report_raw_id = assessment_data.get("id") or "NB-ASD-001"
-        clean_id_hash = hashlib.md5(str(report_raw_id).encode()).hexdigest()[:6].upper()
-        report_id_str = f"NB-REP-2026-{clean_id_hash}"
         date_str = datetime.utcnow().strftime("%d-%b-%Y %H:%M IST")
 
         header_left = [
@@ -313,7 +310,6 @@ class PDFReportService:
         ]
 
         header_right = [
-            Paragraph(f"<b>Report ID:</b> {report_id_str}", meta_right),
             Paragraph(f"<b>Date:</b> {date_str}", meta_right),
         ]
 
