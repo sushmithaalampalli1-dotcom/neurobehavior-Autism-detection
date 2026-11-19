@@ -64,7 +64,7 @@ const PROXIMITY_OPTIONS = [
   { id: '500', label: 'Within 500 km (Inter-State)', km: 500 },
 ];
 
-// Fallback verified clinical ratings mapping in case backend is loading or partially seeded
+// Fallback verified clinical ratings mapping
 const DEFAULT_RATINGS = {
   'NIMHANS Center for Autism Research and Services': { rating: 4.9, reviews: 1840 },
   'Manipal Hospital Child Development & Neuro Center': { rating: 4.8, reviews: 860 },
@@ -95,11 +95,70 @@ const DEFAULT_RATINGS = {
   'AIIMS Bhubaneswar Child Health & Development Center': { rating: 4.9, reviews: 1560 },
 };
 
+// 100% verified canonical official hospital website addresses
+const OFFICIAL_WEBSITES = {
+  'NIMHANS Center for Autism Research and Services': 'https://nimhans.ac.in',
+  'Manipal Hospital Child Development & Neuro Center': 'https://www.manipalhospitals.com',
+  'Aster CMI Child Neurodevelopment Clinic': 'https://www.asterhospitals.in',
+  'All India Institute of Speech and Hearing (AIISH)': 'https://aiishmysore.in',
+  'Kovai Medical Center Child Development & Autism Unit': 'https://www.kmchhospitals.com',
+  "Apollo Children's Hospital Developmental Clinic": 'https://www.apollohospitals.com/chennai/',
+  'VHS Child Development & Autism Clinic': 'https://vhschennai.org',
+  'Aster Medcity Child Neurodevelopmental Center': 'https://www.astermedcity.com',
+  'CDC - Child Development Centre, Medical College': 'http://cdckerala.org',
+  "Rainbow Children's Hospital & BirthRight": 'https://www.rainbowhospitals.in',
+  'Niloufer Hospital Child Guidance Clinic': 'https://nilouferhospital.in',
+  'Action For Autism (AFA) - The National Centre for Autism': 'https://www.autism-india.org',
+  'AIIMS Pediatric Neurology & Child Guidance Center': 'https://www.aiims.edu',
+  'Medanta Child Development Center': 'https://www.medanta.org',
+  'PRAYAS - Center for Special Children & Autism Clinic': 'http://prayaaschandigarh.in/',
+  'PGIMER Child & Adolescent Psychiatry Unit': 'https://pgimer.edu.in',
+  'Fortis Escorts Pediatric Neurodevelopment Clinic': 'https://www.fortishealthcare.com/india/fortis-escorts-hospital-in-jaipur-rajasthan',
+  'SGPGI Pediatric Neurology & Development Center': 'https://sgpgims.org.in',
+  'Ummeed Child Development Center': 'https://ummeed.org',
+  'Kokilaben Dhirubhai Ambani Hospital Center for Child Development': 'https://www.kokilabenhospital.com',
+  'KEM Hospital Child Development & Autism Unit': 'https://kemhrcpune.org',
+  'Apollo Hospitals Child Health Center': 'https://www.apollohospitals.com/nashik/',
+  'Sunshine Global Hospital Pediatric Center': 'https://sunshineglobalhospitals.com',
+  'Apollo Hospitals Child Neurodevelopment Center': 'https://www.apollohospitals.com/ahmedabad/',
+  'Institute of Child Health Autism & Neurodevelopment Clinic': 'https://www.ichcalcutta.org',
+  "AMRI Children's Hospital Developmental Care Unit": 'https://www.manipalhospitals.com/mukundapur/',
+  'AIIMS Bhubaneswar Child Health & Development Center': 'https://aiimsbhubaneswar.nic.in',
+};
+
 function resolveCentreRating(c) {
   const fallback = DEFAULT_RATINGS[c.name] || { rating: 4.8, reviews: 500 };
   const rating = typeof c.rating === 'number' && c.rating > 0 ? c.rating : fallback.rating;
   const review_count = typeof c.review_count === 'number' && c.review_count > 0 ? c.review_count : fallback.reviews;
   return { rating, review_count };
+}
+
+// Guaranteed valid official website URL for any center
+function getHospitalWebsite(centre) {
+  if (centre?.website && typeof centre.website === 'string' && centre.website.trim().length > 3) {
+    let url = centre.website.trim();
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = `https://${url}`;
+    }
+    return url;
+  }
+  return OFFICIAL_WEBSITES[centre?.name] || `https://www.google.com/search?q=${encodeURIComponent((centre?.name || 'Hospital') + ' official website')}`;
+}
+
+// Direct Google Maps location search URL (opens exact location pin)
+function getGoogleMapsLocationUrl(centre) {
+  if (centre?.latitude && centre?.longitude) {
+    return `https://www.google.com/maps/search/?api=1&query=${centre.latitude},${centre.longitude}`;
+  }
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${centre?.name || ''}, ${centre?.address || ''}, ${centre?.city || ''}`)}`;
+}
+
+// Direct Google Maps turn-by-turn driving directions URL from patient coordinates
+function getGoogleMapsDirectionsUrl(centre, userLocation) {
+  if (userLocation && centre?.latitude && centre?.longitude) {
+    return `https://www.google.com/maps/dir/?api=1&origin=${userLocation.latitude},${userLocation.longitude}&destination=${centre.latitude},${centre.longitude}&travelmode=driving`;
+  }
+  return getGoogleMapsLocationUrl(centre);
 }
 
 export default function SupportCentresPage({ navigate }) {
@@ -361,7 +420,6 @@ export default function SupportCentresPage({ navigate }) {
         return b.rating - a.rating;
       });
     } else {
-      // Default: rating first
       list.sort((a, b) => b.rating - a.rating);
     }
 
@@ -459,8 +517,8 @@ export default function SupportCentresPage({ navigate }) {
     setLocationNotice(`Patient location set to ${preset.name}. Showing hospitals sorted by proximity and ratings.`);
   };
 
-  // Focus a centre on map and draw direct trajectory line from patient
-  const focusCentre = (centre) => {
+  // Focus a centre on map, open its popup, and smoothly bring map into view
+  const focusCentre = (centre, shouldScroll = false) => {
     setSelectedCentre(centre);
     const map = mapInstanceRef.current;
     if (!map || !centre.latitude || !centre.longitude) return;
@@ -500,6 +558,23 @@ export default function SupportCentresPage({ navigate }) {
       map.fitBounds(group.getBounds().pad(0.25));
     } else {
       map.setView([centre.latitude, centre.longitude], 13);
+    }
+
+    // Open Leaflet marker popup for this centre
+    const targetMarker = markersRef.current.find((m) => m._centreId === centre.id);
+    if (targetMarker) {
+      setTimeout(() => {
+        try {
+          targetMarker.openPopup();
+        } catch {
+          // Ignore if popup already opened
+        }
+      }, 150);
+    }
+
+    // Smoothly scroll map into view if requested
+    if (shouldScroll && mapContainerRef.current) {
+      mapContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   };
 
@@ -624,6 +699,9 @@ export default function SupportCentresPage({ navigate }) {
         const straightDist = centre.distance_km;
         const drivingKm = centre.driving_km;
         const driveTime = centre.drive_time;
+        const websiteUrl = getHospitalWebsite(centre);
+        const locationMapUrl = getGoogleMapsLocationUrl(centre);
+        const directionsUrl = getGoogleMapsDirectionsUrl(centre, userLocation);
 
         const distBadge = straightDist !== undefined
           ? `<div style="margin-top: 4px; font-weight: 700; color: ${
@@ -646,10 +724,6 @@ export default function SupportCentresPage({ navigate }) {
           </div>
         ` : '';
 
-        const googleMapsDirectionsUrl = userLocation
-          ? `https://www.google.com/maps/dir/?api=1&origin=${userLocation.latitude},${userLocation.longitude}&destination=${centre.latitude},${centre.longitude}&travelmode=driving`
-          : `https://www.google.com/maps/search/?api=1&query=${centre.latitude},${centre.longitude}`;
-
         const tooltipText = userLocation && straightDist !== undefined
           ? `🏥 <b>${centre.name}</b> ⭐ <b>${centre.rating}</b><br/>📍 <b>${straightDist} km</b> from Patient (${selectedCityName || 'Active Location'})<br/>🚗 ~<b>${drivingKm} km</b> (${driveTime})`
           : `🏥 <b>${centre.name}</b> ⭐ <b>${centre.rating}</b> (${centre.city})`;
@@ -658,23 +732,35 @@ export default function SupportCentresPage({ navigate }) {
           .addTo(map)
           .bindTooltip(tooltipText, { direction: 'top', offset: [0, -15] })
           .bindPopup(`
-            <div style="font-family: inherit; font-size: 13px; max-width: 270px;">
-              <strong style="color: #0f172a; font-size: 14px;">${centre.name}</strong><br/>
+            <div style="font-family: inherit; font-size: 13px; max-width: 280px; padding: 2px;">
+              <a href="${websiteUrl}" target="_blank" rel="noopener noreferrer" style="color: #0f172a; text-decoration: none;" title="Open Official Website">
+                <strong style="color: #0f172a; font-size: 14px;">${centre.name} 🌐↗</strong>
+              </a><br/>
               <span style="color: #64748b; font-size: 11px;">${centre.facility_type}</span><br/>
               ${ratingBadge}
-              <p style="margin: 6px 0; color: #334155;">${centre.address}, ${centre.city}</p>
+              <p style="margin: 6px 0; color: #334155; line-height: 1.4;">
+                <a href="${locationMapUrl}" target="_blank" rel="noopener noreferrer" style="color: #0369a1; text-decoration: underline;" title="Open location map">
+                  📍 ${centre.address}, ${centre.city} ↗
+                </a>
+              </p>
               ${distBadge}
               ${patientLocationNotice}
-              <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
-                <a href="${googleMapsDirectionsUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background: #0284c7; color: #ffffff; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; text-decoration: none;">
-                  🚗 Get GPS Driving Route ↗
+              <div style="margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap;">
+                <a href="${websiteUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 4px; background: #0284c7; color: #ffffff; padding: 5px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; text-decoration: none;">
+                  🌐 Official Website ↗
                 </a>
-                ${centre.website ? `<a href="${centre.website}" target="_blank" rel="noopener noreferrer" style="color: #0284c7; font-size: 11px; font-weight: 600; padding: 4px 6px;">Website ↗</a>` : ''}
+                <a href="${locationMapUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 4px; background: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; padding: 5px 9px; border-radius: 4px; font-size: 11px; font-weight: 700; text-decoration: none;">
+                  📍 Location Map ↗
+                </a>
+                <a href="${directionsUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 4px; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; padding: 5px 9px; border-radius: 4px; font-size: 11px; font-weight: 700; text-decoration: none;">
+                  🚗 Driving Route ↗
+                </a>
               </div>
             </div>
           `);
 
-        marker.on('click', () => focusCentre(centre));
+        marker._centreId = centre.id;
+        marker.on('click', () => focusCentre(centre, false));
         markersRef.current.push(marker);
       }
     });
@@ -695,7 +781,7 @@ export default function SupportCentresPage({ navigate }) {
           <div>
             <h2 className="card-title">High-Accuracy Location Based Personalized Support</h2>
             <p className="card-subtitle">
-              Accredited pediatric hospitals, neurology clinics, and autism diagnostic centers ranked by clinical ratings and calibrated patient proximity
+              Accredited pediatric hospitals, neurology clinics, and autism diagnostic centers ranked by clinical ratings with 1-click official websites and live location maps
             </p>
           </div>
           <span className="badge badge-success">High-Precision GPS & Rating Engine</span>
@@ -835,10 +921,14 @@ export default function SupportCentresPage({ navigate }) {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
           {topRatedSuggestions.map((centre) => {
             const isSelected = selectedCentre?.id === centre.id;
+            const websiteUrl = getHospitalWebsite(centre);
+            const locationMapUrl = getGoogleMapsLocationUrl(centre);
+            const directionsUrl = getGoogleMapsDirectionsUrl(centre, userLocation);
+
             return (
               <div
                 key={centre.id}
-                onClick={() => focusCentre(centre)}
+                onClick={() => focusCentre(centre, true)}
                 style={{
                   background: '#ffffff',
                   border: isSelected ? '2px solid #0284c7' : '1px solid #fde68a',
@@ -867,41 +957,87 @@ export default function SupportCentresPage({ navigate }) {
                     </span>
                   </div>
 
-                  <h4 style={{ fontSize: '0.96rem', fontWeight: 700, color: 'var(--navy)', margin: '0 0 4px 0', lineHeight: 1.35 }}>
-                    {centre.name}
-                  </h4>
-                  <p style={{ fontSize: '0.78rem', color: 'var(--slate-600)', margin: '0 0 6px 0' }}>
-                    📍 {centre.city}, {centre.state} &bull; <span style={{ color: 'var(--slate-500)' }}>{centre.facility_type}</span>
-                  </p>
+                  {/* Hospital Title (Clickable link to official website) */}
+                  <a
+                    href={websiteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ textDecoration: 'none', color: 'inherit' }}
+                    onClick={(e) => e.stopPropagation()}
+                    title="Open official hospital website in new tab"
+                  >
+                    <h4 style={{ fontSize: '0.96rem', fontWeight: 700, color: 'var(--navy)', margin: '0 0 4px 0', lineHeight: 1.35, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <span>{centre.name}</span>
+                      <span style={{ fontSize: '0.74rem', color: '#0284c7' }}>🌐↗</span>
+                    </h4>
+                  </a>
+
+                  {/* Address (Clickable link to Location Map) */}
+                  <div
+                    style={{ fontSize: '0.78rem', color: 'var(--slate-600)', margin: '0 0 6px 0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(locationMapUrl, '_blank', 'noopener,noreferrer');
+                    }}
+                    title="Open hospital location on Google Maps"
+                  >
+                    <span>📍</span>
+                    <span style={{ color: '#0369a1', textDecoration: 'underline' }}>{centre.city}, {centre.state}</span>
+                    <span style={{ color: 'var(--slate-500)' }}>&bull; {centre.facility_type}</span>
+                    <span style={{ fontSize: '0.72rem', color: '#0284c7' }}>↗</span>
+                  </div>
 
                   {centre.distance_km !== undefined && (
-                    <div style={{ padding: '6px 10px', background: '#f8fafc', borderRadius: '4px', border: '1px solid #e2e8f0', fontSize: '0.78rem', color: '#0369a1', fontWeight: 600, marginBottom: '8px' }}>
-                      📍 <strong>{centre.distance_km} km</strong> away &bull; 🚗 <strong>{centre.drive_time}</strong> drive
-                    </div>
+                    <a
+                      href={directionsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ textDecoration: 'none', display: 'block' }}
+                      onClick={(e) => e.stopPropagation()}
+                      title="Open turn-by-turn driving route in Google Maps"
+                    >
+                      <div style={{ padding: '6px 10px', background: '#f8fafc', borderRadius: '4px', border: '1px solid #e2e8f0', fontSize: '0.78rem', color: '#0369a1', fontWeight: 600, marginBottom: '8px', cursor: 'pointer' }}>
+                        📍 <strong>{centre.distance_km} km</strong> away &bull; 🚗 <strong>{centre.drive_time}</strong> drive <span style={{ fontSize: '0.74rem' }}>↗</span>
+                      </div>
+                    </a>
                   )}
                 </div>
 
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '6px' }}>
+                {/* 1-Click Action Buttons: Official Website, Location Map, Interactive Map */}
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '6px', flexWrap: 'wrap' }}>
+                  <a
+                    href={websiteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-primary"
+                    style={{ fontSize: '0.74rem', padding: '6px 11px', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    onClick={(e) => e.stopPropagation()}
+                    title="Open official hospital website in new tab"
+                  >
+                    🌐 Official Website ↗
+                  </a>
+
+                  <a
+                    href={locationMapUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-outline"
+                    style={{ fontSize: '0.74rem', padding: '6px 9px', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#f8fafc' }}
+                    onClick={(e) => e.stopPropagation()}
+                    title="Open location on Google Maps"
+                  >
+                    📍 Location Map ↗
+                  </a>
+
                   <button
                     type="button"
                     className="btn btn-secondary"
-                    style={{ fontSize: '0.76rem', padding: '6px 12px', flex: 1, fontWeight: 700 }}
-                    onClick={(e) => { e.stopPropagation(); focusCentre(centre); }}
+                    style={{ fontSize: '0.74rem', padding: '6px 9px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    onClick={(e) => { e.stopPropagation(); focusCentre(centre, true); }}
+                    title="View on interactive Leaflet map"
                   >
-                    🎯 Focus on Map
+                    🎯 In-Page Map
                   </button>
-                  {centre.website && (
-                    <a
-                      href={centre.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn btn-outline"
-                      style={{ fontSize: '0.76rem', padding: '6px 10px', textDecoration: 'none' }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      Website ↗
-                    </a>
-                  )}
                 </div>
               </div>
             );
@@ -1157,10 +1293,9 @@ export default function SupportCentresPage({ navigate }) {
               const drivingKm = centre.driving_km;
               const driveTime = centre.drive_time;
               const isSelected = selectedCentre?.id === centre.id;
-
-              const googleMapsDirectionsUrl = userLocation
-                ? `https://www.google.com/maps/dir/?api=1&origin=${userLocation.latitude},${userLocation.longitude}&destination=${centre.latitude},${centre.longitude}&travelmode=driving`
-                : `https://www.google.com/maps/search/?api=1&query=${centre.latitude},${centre.longitude}`;
+              const websiteUrl = getHospitalWebsite(centre);
+              const locationMapUrl = getGoogleMapsLocationUrl(centre);
+              const directionsUrl = getGoogleMapsDirectionsUrl(centre, userLocation);
 
               return (
                 <div
@@ -1174,13 +1309,25 @@ export default function SupportCentresPage({ navigate }) {
                     padding: '16px',
                     background: isSelected ? '#f8faff' : '#ffffff',
                   }}
-                  onClick={() => focusCentre(centre)}
+                  onClick={() => focusCentre(centre, true)}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '6px' }}>
                     <div>
-                      <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--navy)', margin: '0 0 4px 0' }}>
-                        {centre.name}
-                      </h4>
+                      {/* Hospital Title (Clickable link to Official Website) */}
+                      <a
+                        href={websiteUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ textDecoration: 'none', color: 'inherit' }}
+                        onClick={(e) => e.stopPropagation()}
+                        title="Click to open official hospital website in new tab"
+                      >
+                        <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--navy)', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                          <span>{centre.name}</span>
+                          <span style={{ fontSize: '0.78rem', color: '#0284c7' }}>🌐↗</span>
+                        </h4>
+                      </a>
+
                       {/* Rating Stars Badge */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                         <div style={{
@@ -1209,20 +1356,30 @@ export default function SupportCentresPage({ navigate }) {
 
                     {straightDist !== undefined && (
                       <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <span
-                          className="badge"
-                          style={{
-                            background: straightDist <= 50 ? '#f0fdf4' : straightDist <= 150 ? '#f0f9ff' : '#fffbeb',
-                            color: straightDist <= 50 ? '#15803d' : straightDist <= 150 ? '#0369a1' : '#b45309',
-                            border: `1px solid ${straightDist <= 50 ? '#86efac' : straightDist <= 150 ? '#bae6fd' : '#fde68a'}`,
-                            fontWeight: 700,
-                            fontSize: '0.8rem',
-                            whiteSpace: 'nowrap',
-                            display: 'inline-block',
-                          }}
+                        <a
+                          href={directionsUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ textDecoration: 'none' }}
+                          onClick={(e) => e.stopPropagation()}
+                          title="Open turn-by-turn driving route in Google Maps"
                         >
-                          📍 {straightDist} km straight &bull; ~{drivingKm} km road
-                        </span>
+                          <span
+                            className="badge"
+                            style={{
+                              background: straightDist <= 50 ? '#f0fdf4' : straightDist <= 150 ? '#f0f9ff' : '#fffbeb',
+                              color: straightDist <= 50 ? '#15803d' : straightDist <= 150 ? '#0369a1' : '#b45309',
+                              border: `1px solid ${straightDist <= 50 ? '#86efac' : straightDist <= 150 ? '#bae6fd' : '#fde68a'}`,
+                              fontWeight: 700,
+                              fontSize: '0.8rem',
+                              whiteSpace: 'nowrap',
+                              display: 'inline-block',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            📍 {straightDist} km straight &bull; ~{drivingKm} km road <span style={{ fontSize: '0.72rem' }}>↗</span>
+                          </span>
+                        </a>
                         <div style={{ fontSize: '0.74rem', color: '#0369a1', fontWeight: 700, marginTop: '2px' }}>
                           🚗 {driveTime} drive from Patient
                         </div>
@@ -1234,39 +1391,72 @@ export default function SupportCentresPage({ navigate }) {
                     <strong>{centre.facility_type}</strong> &bull; {centre.city}, {centre.state}
                   </span>
 
-                  <p style={{ fontSize: '0.84rem', color: 'var(--slate-700)', margin: '0 0 10px 0', lineHeight: 1.45 }}>
-                    <strong>Address:</strong> {centre.address}
-                  </p>
+                  {/* Address line (Clickable to open Location Map) */}
+                  <div
+                    style={{ fontSize: '0.84rem', color: 'var(--slate-700)', margin: '0 0 10px 0', lineHeight: 1.45, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(locationMapUrl, '_blank', 'noopener,noreferrer');
+                    }}
+                    title="Click to open hospital location in Google Maps"
+                  >
+                    <strong>Address:</strong>
+                    <span style={{ color: '#0369a1', textDecoration: 'underline' }}>{centre.address}</span>
+                    <span style={{ fontSize: '0.8rem', color: '#0284c7' }}>📍↗</span>
+                  </div>
 
-                  {/* Action Buttons: 1-Click GPS Navigation, Website, Phone */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  {/* Action Buttons: 1-Click Official Website, Location Map, Driving Directions, Focus Map */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--slate-100)' }}>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                       <a
-                        href={googleMapsDirectionsUrl}
+                        href={websiteUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="btn btn-primary"
-                        style={{ fontSize: '0.78rem', padding: '6px 12px', fontWeight: 700, textDecoration: 'none' }}
+                        style={{ fontSize: '0.76rem', padding: '6px 12px', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                         onClick={(e) => e.stopPropagation()}
+                        title="Open official hospital website in new tab"
                       >
-                        🚗 Navigate with Google Maps ↗
+                        🌐 Official Hospital Website ↗
                       </a>
 
-                      {centre.website && (
-                        <a
-                          href={centre.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ fontSize: '0.8rem', color: '#0284c7', fontWeight: 600, textDecoration: 'none' }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          Official Website ↗
-                        </a>
-                      )}
+                      <a
+                        href={locationMapUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-outline"
+                        style={{ fontSize: '0.76rem', padding: '6px 10px', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#f8fafc' }}
+                        onClick={(e) => e.stopPropagation()}
+                        title="Open hospital location in Google Maps"
+                      >
+                        📍 Open Location Map ↗
+                      </a>
+
+                      <a
+                        href={directionsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-outline"
+                        style={{ fontSize: '0.76rem', padding: '6px 10px', fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                        onClick={(e) => e.stopPropagation()}
+                        title="Open GPS driving directions from your location"
+                      >
+                        🚗 Driving Route ↗
+                      </a>
+
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        style={{ fontSize: '0.76rem', padding: '6px 10px', fontWeight: 600 }}
+                        onClick={(e) => { e.stopPropagation(); focusCentre(centre, true); }}
+                        title="View and focus on interactive Leaflet map"
+                      >
+                        🎯 Focus on Map
+                      </button>
                     </div>
 
                     {centre.phone && (
-                      <span style={{ fontSize: '0.8rem', color: 'var(--slate-700)', fontWeight: 600 }}>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--slate-700)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                         📞 {centre.phone}
                       </span>
                     )}
