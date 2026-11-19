@@ -4,7 +4,7 @@ Project: Deep Learning-Based Autism Detection Using Brain Imaging Biomarkers
 and Behavioral Features with Personalized Support System.
 """
 import os
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request, send_from_directory
 from backend.config import config_by_name, BASE_DIR
 from backend.extensions import db, cors
 from backend.routes import (
@@ -63,7 +63,6 @@ def create_app(config_name: str = None) -> Flask:
     # Serve uploaded MRI scan files
     @app.route("/api/mri/file/<path:filename>")
     def get_uploaded_mri_file(filename):
-        from flask import send_from_directory
         safe_name = os.path.basename(filename)
         return send_from_directory(app.config["UPLOAD_FOLDER"], safe_name)
 
@@ -73,7 +72,6 @@ def create_app(config_name: str = None) -> Flask:
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")
     def serve_frontend_or_status(path):
-        from flask import send_from_directory
         # Prevent intercepting /api routes if an endpoint was 404
         if path.startswith("api/"):
             return jsonify({"error": f"API endpoint '/{path}' not found."}), 404
