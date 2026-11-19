@@ -70,8 +70,13 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
   const patientId = user?.id ? `NB-PAT-2026-${String(user.id).padStart(4, '0')}` : 'NB-PAT-2026-6A5F';
   const reportDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' IST';
 
-  // Resolved MRI scan preview image (No dummy replacement)
-  const mriPreviewUrl = hasMri ? activeMriResult?.previewUrl : null;
+  // Resolved MRI scan preview image (Direct base64, URL, or API endpoint)
+  const mriPreviewUrl = hasMri
+    ? (activeMriResult?.image_base64 ||
+       activeMriResult?.previewUrl ||
+       activeMriResult?.image_url ||
+       (mriFilename ? `/api/mri/file/${mriFilename}` : null))
+    : null;
 
   // Age & Guardian calculations
   const ageNum = parseFloat(patientAge) || 21.0;
@@ -116,6 +121,8 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
         patient_gender: patientGender,
         blood_group: bloodGroup,
         mri_filename: hasMri ? mriFilename : null,
+        image_base64: hasMri ? (activeMriResult?.image_base64 || activeMriResult?.previewUrl) : null,
+        overlay_base64: hasMri ? (activeMriResult?.explainable_ai?.overlay_base64 || activeMriResult?.explainable_ai?.heatmap_base64) : null,
         clinical_notes: 'Screening report generated from patient evaluation session.',
       };
       const res = await api.generateReport(payload);
@@ -413,35 +420,31 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
 
             {hasMri ? (
               <div>
-                <div style={{ display: 'grid', gridTemplateColumns: activeMriResult?.explainable_ai ? '115px 115px 1fr' : '130px 1fr', gap: '14px', alignItems: 'center' }}>
-                  {/* Uploaded MRI Scan Slice */}
-                  <div style={{ textAlign: 'center', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px', background: '#0f172a' }}>
-                    {mriPreviewUrl ? (
-                      <img
-                        src={mriPreviewUrl}
-                        alt="Uploaded brain MRI scan"
-                        style={{ width: '100px', height: '100px', objectFit: 'contain', display: 'block', margin: '0 auto', borderRadius: '4px' }}
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <div style={{ width: '100px', height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '2rem' }}>
-                        🧠
-                      </div>
-                    )}
-                    <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '4px', wordBreak: 'break-all' }}>
-                      <code>{mriFilename || 'Uploaded Scan'}</code>
+                <div style={{ display: 'grid', gridTemplateColumns: activeMriResult?.explainable_ai ? '110px 110px 1fr' : '120px 1fr', gap: '14px', alignItems: 'center' }}>
+                  {/* Uploaded MRI Scan Picture */}
+                  <div style={{ textAlign: 'center', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px', background: '#0a0f1d' }}>
+                    <img
+                      src={mriPreviewUrl || (mriFilename ? `/api/mri/file/${mriFilename}` : null)}
+                      alt="Uploaded brain MRI scan"
+                      style={{ width: '96px', height: '96px', objectFit: 'contain', display: 'block', margin: '0 auto', borderRadius: '4px' }}
+                      onError={(e) => {
+                        if (mriFilename && !e.target.src.includes('/api/mri/file/')) {
+                          e.target.src = `/api/mri/file/${mriFilename}`;
+                        }
+                      }}
+                    />
+                    <div style={{ fontSize: '0.68rem', color: '#cbd5e1', marginTop: '4px', fontWeight: 700 }}>
+                      Uploaded MRI Scan
                     </div>
                   </div>
 
                   {/* Grad-CAM Heatmap */}
                   {activeMriResult?.explainable_ai && (
-                    <div style={{ textAlign: 'center', border: '1px solid #38bdf8', borderRadius: '6px', padding: '6px', background: '#0b1329' }}>
+                    <div style={{ textAlign: 'center', border: '1px solid #38bdf8', borderRadius: '6px', padding: '6px', background: '#0a0f1d' }}>
                       <img
-                        src={activeMriResult.explainable_ai.overlay_base64 || activeMriResult.explainable_ai.overlay_url}
+                        src={activeMriResult.explainable_ai.overlay_base64 || activeMriResult.explainable_ai.overlay_url || activeMriResult.explainable_ai.heatmap_base64 || activeMriResult.explainable_ai.heatmap_url}
                         alt="Grad-CAM Heatmap"
-                        style={{ width: '100px', height: '100px', objectFit: 'contain', display: 'block', margin: '0 auto', borderRadius: '4px' }}
+                        style={{ width: '96px', height: '96px', objectFit: 'contain', display: 'block', margin: '0 auto', borderRadius: '4px' }}
                       />
                       <div style={{ fontSize: '0.68rem', color: '#38bdf8', marginTop: '4px', fontWeight: 700 }}>
                         Grad-CAM Heatmap

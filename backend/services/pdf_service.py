@@ -36,6 +36,30 @@ except ImportError:
     REPORTLAB_AVAILABLE = False
 
 
+def _flowable_from_base64(b64_string: str, width: float = 90, height: float = 90):
+    """Convert a base64-encoded image string into a ReportLab Image Flowable."""
+    if not b64_string or not isinstance(b64_string, str) or not REPORTLAB_AVAILABLE:
+        return None
+    try:
+        import base64
+        import io
+        from PIL import Image as PILImage
+        clean_b64 = b64_string
+        if "," in clean_b64:
+            clean_b64 = clean_b64.split(",", 1)[1]
+        img_bytes = base64.b64decode(clean_b64)
+        pil_img = PILImage.open(io.BytesIO(img_bytes))
+        if pil_img.mode != "RGB":
+            pil_img = pil_img.convert("RGB")
+        buf = io.BytesIO()
+        pil_img.resize((224, 224)).save(buf, format="PNG")
+        buf.seek(0)
+        return RLImage(buf, width=width, height=height)
+    except Exception as e:
+        print(f"[!] Base64 flowable generation note: {e}")
+        return None
+
+
 def _resolve_mri_image_flowable(mri_filename: str, project_root: Path, width: float = 110, height: float = 110):
     """Find the uploaded MRI scan file on disk and return a ReportLab Image Flowable."""
     if not REPORTLAB_AVAILABLE:
@@ -416,9 +440,28 @@ class PDFReportService:
             raw_score_str = f"{prob_raw:.4f} (Threshold: {threshold:.2f})"
 
             # 1. Resolve Uploaded MRI Scan Image Flowable and Grad-CAM Flowable
-            mri_image_flowable = _resolve_mri_image_flowable(mri_filename, project_root, width=90, height=90)
-            gradcam_fn = f"gradcam_overlay_{Path(mri_filename).stem}.png"
-            gradcam_flowable = _resolve_mri_image_flowable(gradcam_fn, project_root, width=90, height=90)
+            mri_image_flowable = None
+            if assessment_data.get("image_base64"):
+                mri_image_flowable = _flowable_from_base64(assessment_data["image_base64"], width=90, height=90)
+            if not mri_image_flowable and assessment_data.get("previewUrl") and str(assessment_data["previewUrl"]).startswith("data:"):
+                mri_image_flowable = _flowable_from_base64(assessment_data["previewUrl"], width=90, height=90)
+            if not mri_image_flowable:
+                mri_image_flowable = _resolve_mri_image_flowable(mri_filename, project_root, width=90, height=90)
+
+            gradcam_flowable = None
+            if assessment_data.get("overlay_base64"):
+                gradcam_flowable = _flowable_from_base64(assessment_data["overlay_base64"], width=90, height=90)
+            elif assessment_data.get("gradcam_base64"):
+                gradcam_flowable = _flowable_from_base64(assessment_data["gradcam_base64"], width=90, height=90)
+            elif isinstance(assessment_data.get("explainable_ai"), dict) and assessment_data["explainable_ai"].get("overlay_base64"):
+                gradcam_flowable = _flowable_from_base64(assessment_data["explainable_ai"]["overlay_base64"], width=90, height=90)
+
+            if not gradcam_flowable:
+                gradcam_fn = f"gradcam_overlay_{Path(mri_filename).stem}.png"
+                gradcam_flowable = _resolve_mri_image_flowable(gradcam_fn, project_root, width=90, height=90)
+            if not gradcam_flowable:
+                gradcam_heatmap_fn = f"gradcam_heatmap_{Path(mri_filename).stem}.png"
+                gradcam_flowable = _resolve_mri_image_flowable(gradcam_heatmap_fn, project_root, width=90, height=90)
 
             # 2. MRI Data Metrics Table
             mri_metrics_rows = [
@@ -465,7 +508,7 @@ class PDFReportService:
                 gradcam_container = [
                     gradcam_flowable,
                     Spacer(1, 2),
-                    Paragraph("<b>Grad-CAM Saliency:</b><br/>conv4 Overlay", image_caption),
+                    Paragraph("<b>Grad-CAM Heatmap:</b><br/>Attention Overlay", image_caption),
                 ]
                 sec2_composite = Table([[scan_container, gradcam_container, mri_metrics_table]], colWidths=[95, 95, 350])
                 sec2_composite.setStyle(TableStyle([

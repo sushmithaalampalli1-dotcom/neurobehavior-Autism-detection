@@ -21,6 +21,8 @@ def generate_report():
         "assessment_type": data.get("assessment_type", "Comprehensive Clinical Screening Summary"),
         "mri_filename": data.get("mri_filename", "Awaiting Scan Upload"),
         "mri_dimensions": data.get("mri_dimensions", "N/A"),
+        "image_base64": data.get("image_base64") or data.get("previewUrl"),
+        "overlay_base64": data.get("overlay_base64") or data.get("gradcam_base64"),
         "questionnaire_version": data.get("questionnaire_version", "IASQ-1.0 (Standard Caregiver Screening)"),
         "patient_name": data.get("patient_name") or current_user.full_name,
         "patient_email": current_user.email,
@@ -55,7 +57,19 @@ def generate_report():
             assessment_data["gender"] = data.get("gender") or data.get("patient_gender")
         if data.get("blood_group"):
             assessment_data["blood_group"] = data["blood_group"]
+        if data.get("image_base64"):
+            assessment_data["image_base64"] = data["image_base64"]
+        if data.get("overlay_base64"):
+            assessment_data["overlay_base64"] = data["overlay_base64"]
+        if data.get("mri_filename"):
+            assessment_data["mri_filename"] = data["mri_filename"]
         assessment_data["patient_email"] = current_user.email
+        if data.get("image_base64"):
+            assessment_data["image_base64"] = data["image_base64"]
+        if data.get("overlay_base64"):
+            assessment_data["overlay_base64"] = data["overlay_base64"]
+        if data.get("mri_filename"):
+            assessment_data["mri_filename"] = data["mri_filename"]
 
         # Keep assessment modalities strictly isolated to what was actually performed
         if record.assessment_type in ["questionnaire", "iasq"]:
@@ -98,6 +112,12 @@ def generate_report():
         else:
             assessment_data["patient_name"] = current_user.full_name
         assessment_data["patient_email"] = current_user.email
+        if data.get("image_base64"):
+            assessment_data["image_base64"] = data["image_base64"]
+        if data.get("overlay_base64"):
+            assessment_data["overlay_base64"] = data["overlay_base64"]
+        if data.get("mri_filename"):
+            assessment_data["mri_filename"] = data["mri_filename"]
 
     output_dir = current_app.config["REPORTS_DIR"]
     report_filename = f"NeuroBehavior_Report_User{current_user.id}_A{assessment_id or '0'}.pdf"

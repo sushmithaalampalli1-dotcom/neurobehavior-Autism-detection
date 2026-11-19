@@ -466,10 +466,25 @@ class MRIService:
         except Exception as xai_err:
             print(f"[!] Grad-CAM Explainable AI generation note: {xai_err}")
 
+        # Generate base64 and web URL for the uploaded scan slice to ensure 100% reliable report embedding
+        mri_image_b64 = None
+        try:
+            import base64
+            with open(str(slice_path_for_cam), "rb") as img_f:
+                b64_data = base64.b64encode(img_f.read()).decode("utf-8")
+                mime_type = "image/png"
+                if str(slice_path_for_cam).lower().endswith((".jpg", ".jpeg")):
+                    mime_type = "image/jpeg"
+                mri_image_b64 = f"data:{mime_type};base64,{b64_data}"
+        except Exception as b64_err:
+            print(f"[!] MRI base64 encode note: {b64_err}")
+
         response = {
             "success": True,
             "assessment_id": assessment.id,
             "filename": filename,
+            "image_url": f"/api/mri/file/{Path(slice_path_for_cam).name}",
+            "image_base64": mri_image_b64,
             "header_metadata": file_info,
             "explainable_ai": explainable_ai,
             "model_status": {
