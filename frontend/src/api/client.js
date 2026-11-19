@@ -4,7 +4,9 @@
  * and unified multimodal API calls.
  */
 
-const BASE_URL = '/api';
+const BASE_URL = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL.replace(/\/+$/, '')}/api`
+  : '/api';
 const TOKEN_KEY = 'neurobehavior_auth_token';
 const USER_KEY = 'neurobehavior_auth_user';
 

@@ -40,10 +40,9 @@ COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 # Production environment configuration
 ENV FLASK_ENV=production
 ENV PYTHONUNBUFFERED=1
-ENV PORT=5000
 
-# Expose default port and Hugging Face Spaces port
-EXPOSE 5000 7860
+# Expose default ports for Render (10000), Hugging Face Spaces (7860), and local (5000)
+EXPOSE 5000 7860 10000
 
-# Start unified production server
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 2 --threads 2 --timeout 120 wsgi:app"]
+# Start unified production server (1 worker with 4 threads for low-memory footprint <250MB, compatible with Render free tier 512MB and HF Spaces 16GB)
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-7860} --workers 1 --threads 4 --timeout 180 --worker-class gthread wsgi:app"]

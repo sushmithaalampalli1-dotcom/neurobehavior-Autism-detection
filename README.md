@@ -1,3 +1,13 @@
+---
+title: NeuroBehavior ASD Autism Detection Portal
+emoji: 🧠
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # NeuroBehavior-ASD
 
 > **Deep Learning-Based Autism Detection Using Brain Imaging Biomarkers and Behavioral Features with Personalized Support System**
