@@ -71,7 +71,10 @@ def register():
     full_name = data.get("full_name", "").strip()
     email = data.get("email", "").strip().lower()
     password = data.get("password", "")
-    role = data.get("role", "patient")
+    
+    # Security: Public registration strictly creates patient accounts only.
+    # Regular users cannot self-assign administrator or clinician privileges.
+    role = "patient"
 
     # Demographic fields
     raw_age = data.get("age")
@@ -153,6 +156,13 @@ def forgot_password():
             "code": "USER_NOT_FOUND"
         }), 404
 
+    # Security: Administrator accounts cannot be reset via public recovery
+    if user.role == "admin":
+        return jsonify({
+            "error": "Administrator accounts are security-protected and cannot be reset through public password recovery.",
+            "code": "ADMIN_RESET_FORBIDDEN"
+        }), 403
+
     # Generate secure 6-digit code
     code = f"{random.randint(100000, 999999)}"
     user.reset_token = code
@@ -187,6 +197,12 @@ def reset_password():
     user = User.query.filter_by(email=email).first()
     if not user:
         return jsonify({"error": "No account found with this email."}), 404
+
+    if user.role == "admin":
+        return jsonify({
+            "error": "Administrator accounts are security-protected and cannot be reset through public password recovery.",
+            "code": "ADMIN_RESET_FORBIDDEN"
+        }), 403
 
     if not user.reset_token or str(user.reset_token).strip() != token:
         return jsonify({"error": "Invalid verification code. Please check the code sent to your email."}), 400

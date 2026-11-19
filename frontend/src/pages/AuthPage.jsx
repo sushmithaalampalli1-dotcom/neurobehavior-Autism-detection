@@ -296,26 +296,22 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
   };
 
   // Demo Login Quick-Switcher
-  const loginWithDemo = async (demoRole) => {
+  // 1-Click Instant Demo Login (Strictly for Patient Evaluation)
+  const loginWithDemo = async () => {
     setError('');
     setIsAlreadyRegistered(false);
     setSuccessMsg('');
     setLoading(true);
 
-    let demoEmail = 'patient@demo.neurobehavior.org';
-    let demoPass = 'password123';
-
-    if (demoRole === 'admin') {
-      demoEmail = 'admin@demo.neurobehavior.org';
-      demoPass = 'admin123';
-    }
+    const demoEmail = 'patient@demo.neurobehavior.org';
+    const demoPass = 'password123';
 
     try {
       const res = await api.login(demoEmail, demoPass);
       onLoginSuccess(res.user);
       navigate('mri');
     } catch (err) {
-      setError('Could not sign in with demo account: ' + err.message);
+      setError('Could not sign in with demo patient account: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -1044,34 +1040,27 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
           </div>
         )}
 
-        {/* 1-Click Demo Profiles (Only shown on Sign In) */}
+        {/* 1-Click Demo Profile (Strictly Patient Only - Admin Button Removed for Security) */}
         {authMode === 'signin' && (
           <div style={{ marginTop: '24px', paddingTop: '18px', borderTop: '1px solid var(--slate-200)' }}>
             <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', textAlign: 'center', marginBottom: '10px' }}>
-              Or Instant 1-Click Demo Access
+              Instant Demo Patient Evaluation Access
             </span>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+            <div style={{ maxWidth: '340px', margin: '0 auto' }}>
               <button
                 type="button"
                 className="btn btn-secondary"
-                style={{ fontSize: '0.86rem', padding: '12px 10px', flexDirection: 'column', gap: '4px' }}
-                onClick={() => loginWithDemo('patient')}
+                style={{ width: '100%', fontSize: '0.86rem', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                onClick={() => loginWithDemo()}
                 disabled={loading}
               >
-                <span style={{ fontSize: '1.3rem' }}>👤</span>
-                <strong>Demo Patient</strong>
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                style={{ fontSize: '0.86rem', padding: '12px 10px', flexDirection: 'column', gap: '4px' }}
-                onClick={() => loginWithDemo('admin')}
-                disabled={loading}
-              >
-                <span style={{ fontSize: '1.3rem' }}>⚙️</span>
-                <strong>Admin Account</strong>
+                <span style={{ fontSize: '1.25rem' }}>👤</span>
+                <strong>Demo Patient (1-Click Test)</strong>
               </button>
             </div>
+            <p style={{ fontSize: '0.74rem', color: '#64748b', textAlign: 'center', marginTop: '10px', marginBottom: 0 }}>
+              (Evaluators can test patient workflow instantly. Administrator portal requires direct authenticated login.)
+            </p>
           </div>
         )}
       </div>
