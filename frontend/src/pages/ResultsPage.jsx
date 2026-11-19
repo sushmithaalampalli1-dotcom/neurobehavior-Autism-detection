@@ -122,7 +122,6 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
         blood_group: bloodGroup,
         mri_filename: hasMri ? mriFilename : null,
         image_base64: hasMri ? (activeMriResult?.image_base64 || activeMriResult?.previewUrl) : null,
-        overlay_base64: hasMri ? (activeMriResult?.explainable_ai?.overlay_base64 || activeMriResult?.explainable_ai?.heatmap_base64) : null,
         clinical_notes: 'Screening report generated from patient evaluation session.',
       };
       const res = await api.generateReport(payload);
@@ -420,13 +419,13 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
 
             {hasMri ? (
               <div>
-                <div style={{ display: 'grid', gridTemplateColumns: activeMriResult?.explainable_ai ? '110px 110px 1fr' : '120px 1fr', gap: '14px', alignItems: 'center' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '14px', alignItems: 'center' }}>
                   {/* Uploaded MRI Scan Picture */}
                   <div style={{ textAlign: 'center', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px', background: '#0a0f1d' }}>
                     <img
                       src={mriPreviewUrl || (mriFilename ? `/api/mri/file/${mriFilename}` : null)}
                       alt="Uploaded brain MRI scan"
-                      style={{ width: '96px', height: '96px', objectFit: 'contain', display: 'block', margin: '0 auto', borderRadius: '4px' }}
+                      style={{ width: '100px', height: '100px', objectFit: 'contain', display: 'block', margin: '0 auto', borderRadius: '4px' }}
                       onError={(e) => {
                         if (mriFilename && !e.target.src.includes('/api/mri/file/')) {
                           e.target.src = `/api/mri/file/${mriFilename}`;
@@ -437,20 +436,6 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
                       Uploaded MRI Scan
                     </div>
                   </div>
-
-                  {/* Grad-CAM Heatmap */}
-                  {activeMriResult?.explainable_ai && (
-                    <div style={{ textAlign: 'center', border: '1px solid #38bdf8', borderRadius: '6px', padding: '6px', background: '#0a0f1d' }}>
-                      <img
-                        src={activeMriResult.explainable_ai.overlay_base64 || activeMriResult.explainable_ai.overlay_url || activeMriResult.explainable_ai.heatmap_base64 || activeMriResult.explainable_ai.heatmap_url}
-                        alt="Grad-CAM Heatmap"
-                        style={{ width: '96px', height: '96px', objectFit: 'contain', display: 'block', margin: '0 auto', borderRadius: '4px' }}
-                      />
-                      <div style={{ fontSize: '0.68rem', color: '#38bdf8', marginTop: '4px', fontWeight: 700 }}>
-                        Grad-CAM Heatmap
-                      </div>
-                    </div>
-                  )}
 
                   {/* Metrics Table */}
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', border: '1px solid #e2e8f0' }}>
@@ -493,22 +478,15 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
                           <span style={{ color: '#16a34a', fontWeight: 700 }}>PASSED</span> (Std dev &ge; 5.0)
                         </td>
                         <td style={{ background: '#f8fafc', padding: '6px 10px', fontWeight: 700, borderRight: '1px solid #e2e8f0' }}>
-                          Explainable AI:
+                          Model Architecture:
                         </td>
                         <td style={{ padding: '6px 10px' }}>
-                          {activeMriResult?.explainable_ai ? 'Grad-CAM (conv4 Overlay)' : 'Multi-Scale 2.5D CNN'}
+                          Multi-Scale 2.5D CNN Ensemble
                         </td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
-
-                {/* Explainable AI Note */}
-                {activeMriResult?.explainable_ai && (
-                  <div style={{ marginTop: '10px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '8px 12px', fontSize: '0.78rem', color: '#475569' }}>
-                    <strong>Explainable AI (Grad-CAM):</strong> Highlights the key brain regions that influenced this prediction.
-                  </div>
-                )}
               </div>
             ) : (
               <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>

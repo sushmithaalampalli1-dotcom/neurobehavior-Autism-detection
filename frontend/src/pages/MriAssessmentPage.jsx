@@ -19,7 +19,7 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
   const [patientAge, setPatientAge] = useState(() => (user?.age ? String(user.age) : ''));
   const [clinicalNotes, setClinicalNotes] = useState('');
 
-  // Step 1: 'upload' (Ingestion & Pipeline Analysis), Step 2: 'result' (Prediction & Grad-CAM XAI)
+  // Step 1: 'upload' (Ingestion & Pipeline Analysis), Step 2: 'result' (Prediction Result)
   const [step, setStep] = useState(() => (activeMriResult ? 'result' : 'upload'));
 
   useEffect(() => {
@@ -156,7 +156,7 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
       if (onMriCompleted) {
         onMriCompleted(resultWithImages);
       }
-      // Automatically advance to Page 2 (Result & XAI)
+      // Automatically advance to Page 2 (Prediction Result)
       setStep('result');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
@@ -221,7 +221,7 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
             }}
           >
             <span style={{ width: '18px', height: '18px', borderRadius: '50%', background: step === 'result' ? 'rgba(255,255,255,0.25)' : '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem' }}>2</span>
-            <span>Page 2: Prediction Result &amp; XAI</span>
+            <span>Page 2: Prediction Result</span>
           </button>
         </div>
 
@@ -232,7 +232,7 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
             onClick={() => setStep('result')}
             style={{ fontSize: '0.82rem', padding: '6px 14px', background: '#ffffff' }}
           >
-            View Active Result &amp; XAI ➔
+            View Active Result ➔
           </button>
         )}
         {step === 'result' && (
@@ -563,7 +563,7 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
       )}
 
       {/* ========================================================================= */}
-      {/* PAGE 2: RESULT AND XAI IN NEXT PAGE AND AT THE END GIVE A BUTTON TO QUESTIONNAIRE */}
+      {/* PAGE 2: PREDICTION RESULT AND BUTTON TO QUESTIONNAIRE */}
       {/* ========================================================================= */}
       {step === 'result' && uploadResult && (
         <>
@@ -667,66 +667,6 @@ export default function MriAssessmentPage({ user, navigate, activeMriResult, onM
               </div>
             </div>
           </div>
-
-          {/* Explainable AI: Grad-CAM Heatmap */}
-          {uploadResult.explainable_ai && (
-            <div className="card fade-in" style={{ padding: '22px', textAlign: 'center' }}>
-              <h4 style={{ margin: '0 0 14px 0', fontSize: '1.05rem', fontWeight: 800, color: 'var(--navy)' }}>
-                Explainable AI (Grad-CAM Heatmap)
-              </h4>
-
-              {/* 1. Actual Heatmap */}
-              <div style={{
-                maxWidth: '300px',
-                margin: '0 auto 14px',
-                background: '#0a0f1d',
-                borderRadius: '8px',
-                padding: '8px',
-                border: '1px solid #1e293b'
-              }}>
-                <img
-                  src={uploadResult.explainable_ai.overlay_base64 || uploadResult.explainable_ai.overlay_url || uploadResult.explainable_ai.heatmap_base64 || uploadResult.explainable_ai.heatmap_url}
-                  alt="Grad-CAM Brain Heatmap"
-                  style={{ width: '100%', height: '260px', objectFit: 'contain', borderRadius: '4px', display: 'block' }}
-                />
-              </div>
-
-              {/* 2. Prediction & 3. Confidence */}
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '24px',
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                borderRadius: '8px',
-                padding: '8px 24px',
-                marginBottom: '12px'
-              }}>
-                <div>
-                  <span style={{ fontSize: '0.78rem', color: '#64748b', display: 'block', fontWeight: 600, textTransform: 'uppercase' }}>
-                    Prediction
-                  </span>
-                  <strong style={{ fontSize: '1.1rem', color: isAsd ? '#dc2626' : '#16a34a' }}>
-                    {isAsd ? 'Autism' : 'Non Autism'}
-                  </strong>
-                </div>
-                <div style={{ width: '1px', height: '28px', background: '#cbd5e1' }} />
-                <div>
-                  <span style={{ fontSize: '0.78rem', color: '#64748b', display: 'block', fontWeight: 600, textTransform: 'uppercase' }}>
-                    Confidence
-                  </span>
-                  <strong style={{ fontSize: '1.1rem', color: 'var(--navy)' }}>
-                    {confidencePercent}%
-                  </strong>
-                </div>
-              </div>
-
-              {/* 4. One Line Explanation */}
-              <p style={{ margin: 0, fontSize: '0.86rem', color: '#475569' }}>
-                Grad-CAM heatmap highlights the key brain regions that influenced this prediction.
-              </p>
-            </div>
-          )}
 
           {/* At the end, prominent button to Questionnaire */}
           <div
