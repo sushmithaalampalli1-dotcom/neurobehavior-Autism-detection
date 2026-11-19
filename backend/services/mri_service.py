@@ -345,6 +345,7 @@ class MRIService:
                                 )
                                 prob_val = boosted_prob
                                 threshold = boosted_thresh
+                                active_threshold = threshold
                                 arch_name = "NeuroBehavior Boosted Structural Biomarker Model (MobileNetV2 + 2.5D CNN Ensemble)"
                             except Exception as b_err:
                                 print(f"[!] Boosted MRI fallback: {b_err}")
@@ -385,6 +386,7 @@ class MRIService:
                             )
                             prob_val = boosted_prob
                             threshold = boosted_thresh
+                            active_threshold = threshold
                             arch_name = "NeuroBehavior Boosted Structural Biomarker Model (MobileNetV2 + 2.5D CNN Ensemble)"
                         except Exception as b_err:
                             print(f"[!] Boosted NIfTI fallback: {b_err}")
