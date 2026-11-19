@@ -9,11 +9,16 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
   const [generating, setGenerating] = useState(false);
   const [reportSuccess, setReportSuccess] = useState(null);
 
-  // Patient demographic fields matching authenticated profile
+  // Patient demographic fields strictly matching authenticated registration profile
   const [patientName, setPatientName] = useState(() => user?.full_name || '');
   const [patientAge, setPatientAge] = useState(() => (user?.age ? String(user.age) : ''));
   const [patientGender, setPatientGender] = useState(() => user?.gender || '');
   const [bloodGroup, setBloodGroup] = useState(() => user?.blood_group || '');
+
+  const registeredName = user?.full_name || patientName || 'Registered Patient';
+  const registeredAge = (user?.age !== undefined && user?.age !== null && user?.age !== '') ? String(user.age) : (patientAge || '21.0');
+  const registeredGender = user?.gender || patientGender || 'Female';
+  const registeredBloodGroup = user?.blood_group || bloodGroup || 'B-';
 
   useEffect(() => {
     loadAssessments();
@@ -78,8 +83,8 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
        (mriFilename ? `/api/mri/file/${mriFilename}` : null))
     : null;
 
-  // Age & Guardian calculations
-  const ageNum = parseFloat(patientAge) || 21.0;
+  // Age & Guardian calculations strictly based on registered profile
+  const ageNum = parseFloat(registeredAge) || 21.0;
   const isAdult = ageNum >= 18;
   const minorStatus = isAdult ? 'Adult (18+ yrs)' : 'Pediatric (<18 yrs)';
   const guardianStatus = user?.parent_name
@@ -94,19 +99,6 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
     }
 
     setError('');
-
-    const nameCheck = validateFullName(patientName);
-    if (!nameCheck.isValid) {
-      setError(`Cannot generate report: ${nameCheck.message}`);
-      return;
-    }
-
-    const ageCheck = validateAge(patientAge);
-    if (!ageCheck.isValid) {
-      setError(`Cannot generate report: ${ageCheck.message}`);
-      return;
-    }
-
     setGenerating(true);
     setReportSuccess(null);
 
@@ -116,10 +108,10 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
         : (assessments[0]?.id || null);
       const payload = {
         assessment_id: targetId,
-        patient_name: patientName.trim(),
-        patient_age: String(ageCheck.ageNum),
-        patient_gender: patientGender,
-        blood_group: bloodGroup,
+        patient_name: registeredName.trim(),
+        patient_age: String(ageNum),
+        patient_gender: registeredGender,
+        blood_group: registeredBloodGroup,
         mri_filename: hasMri ? mriFilename : null,
         image_base64: hasMri ? (activeMriResult?.image_base64 || activeMriResult?.previewUrl) : null,
         clinical_notes: 'Screening report generated from patient evaluation session.',
@@ -332,12 +324,7 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
                     Patient Full Name:
                   </td>
                   <td style={{ width: '28%', padding: '6px 10px', borderRight: '1px solid #e2e8f0' }}>
-                    <input
-                      type="text"
-                      value={patientName}
-                      onChange={(e) => setPatientName(e.target.value)}
-                      style={{ border: 'none', background: 'transparent', fontWeight: 600, width: '100%', outline: 'none' }}
-                    />
+                    <strong style={{ color: 'var(--navy)' }}>{registeredName}</strong>
                   </td>
                   <td style={{ width: '20%', background: '#f8fafc', padding: '6px 10px', fontWeight: 700, borderRight: '1px solid #e2e8f0' }}>
                     Patient ID:
@@ -351,26 +338,13 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
                     Age:
                   </td>
                   <td style={{ padding: '6px 10px', borderRight: '1px solid #e2e8f0' }}>
-                    <input
-                      type="text"
-                      value={patientAge}
-                      onChange={(e) => setPatientAge(e.target.value)}
-                      style={{ border: 'none', background: 'transparent', width: '50px', outline: 'none' }}
-                    /> Years
+                    <strong style={{ color: 'var(--navy)' }}>{registeredAge} Years</strong>
                   </td>
                   <td style={{ background: '#f8fafc', padding: '6px 10px', fontWeight: 700, borderRight: '1px solid #e2e8f0' }}>
                     Gender:
                   </td>
                   <td style={{ padding: '6px 10px' }}>
-                    <select
-                      value={patientGender}
-                      onChange={(e) => setPatientGender(e.target.value)}
-                      style={{ border: 'none', background: 'transparent', outline: 'none', fontWeight: 500 }}
-                    >
-                      <option>Female</option>
-                      <option>Male</option>
-                      <option>Other</option>
-                    </select>
+                    <strong style={{ color: 'var(--navy)' }}>{registeredGender}</strong>
                   </td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
@@ -378,12 +352,7 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
                     Blood Group:
                   </td>
                   <td style={{ padding: '6px 10px', borderRight: '1px solid #e2e8f0' }}>
-                    <input
-                      type="text"
-                      value={bloodGroup}
-                      onChange={(e) => setBloodGroup(e.target.value)}
-                      style={{ border: 'none', background: 'transparent', width: '60px', outline: 'none' }}
-                    />
+                    <strong style={{ color: 'var(--navy)' }}>{registeredBloodGroup}</strong>
                   </td>
                   <td style={{ background: '#f8fafc', padding: '6px 10px', fontWeight: 700, borderRight: '1px solid #e2e8f0' }}>
                     Minor Status:

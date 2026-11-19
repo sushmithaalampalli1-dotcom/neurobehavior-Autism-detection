@@ -107,11 +107,15 @@ def generate_report():
             assessment_data["questionnaire_version"] = None
 
         assessment_data["id"] = f"NB-ASD-{assessment_id or '001'}"
-        if data.get("patient_name"):
-            assessment_data["patient_name"] = data["patient_name"]
-        else:
-            assessment_data["patient_name"] = current_user.full_name
+        assessment_data["patient_name"] = data.get("patient_name") or current_user.full_name
         assessment_data["patient_email"] = current_user.email
+        assessment_data["patient_phone"] = getattr(current_user, "phone_number", None)
+        assessment_data["parent_name"] = getattr(current_user, "parent_name", None) or data.get("parent_name")
+        assessment_data["parent_phone"] = getattr(current_user, "parent_phone", None) or data.get("parent_phone")
+        assessment_data["parent_relation"] = getattr(current_user, "parent_relation", None) or data.get("parent_relation")
+        assessment_data["age"] = data.get("age") or data.get("patient_age") or getattr(current_user, "age", None) or 21.0
+        assessment_data["gender"] = data.get("gender") or data.get("patient_gender") or getattr(current_user, "gender", None) or "Female"
+        assessment_data["blood_group"] = data.get("blood_group") or getattr(current_user, "blood_group", None) or "B-"
         if data.get("image_base64"):
             assessment_data["image_base64"] = data["image_base64"]
         if data.get("overlay_base64"):

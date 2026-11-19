@@ -6,6 +6,9 @@ import {
   validatePhoneNumber,
   validateAge,
   validateFullName,
+  COUNTRY_PHONE_CONFIG,
+  formatPhoneByCountry,
+  validateCountryPhoneNumber,
 } from '../utils/validators';
 
 export default function AuthPage({ onLoginSuccess, navigate }) {
@@ -23,11 +26,13 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
   const [gender, setGender] = useState('');
   const [bloodGroup, setBloodGroup] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [patientCountry, setPatientCountry] = useState('IN');
 
   // Parent / Guardian details for security and pediatric safety
   const [parentName, setParentName] = useState('');
   const [parentRelation, setParentRelation] = useState('Parent / Legal Guardian');
   const [parentPhone, setParentPhone] = useState('');
+  const [guardianCountry, setGuardianCountry] = useState('IN');
 
   // Touched state for professional on-the-fly validation feedback
   const [touched, setTouched] = useState({});
@@ -50,16 +55,58 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
     setTouched((prev) => ({ ...prev, [field]: true }));
   };
 
-  // Live validation calculations
+  // Live validation calculations with international country rules
   const emailVal = validateEmail(email);
   const passStrength = evaluatePasswordStrength(password);
   const ageVal = validateAge(age);
   const nameVal = validateFullName(fullName);
-  const phoneVal = validatePhoneNumber(phoneNumber);
+  const phoneVal = validateCountryPhoneNumber(phoneNumber, patientCountry);
   const parentNameVal = validateFullName(parentName);
-  const parentPhoneVal = validatePhoneNumber(parentPhone);
+  const parentPhoneVal = validateCountryPhoneNumber(parentPhone, guardianCountry);
 
   const isPasswordMatch = password && registerConfirmPassword && password === registerConfirmPassword;
+
+  // Selected Country Configurations
+  const currentPatientConfig =
+    COUNTRY_PHONE_CONFIG.find((c) => c.code === patientCountry) || COUNTRY_PHONE_CONFIG[0];
+  const currentGuardianConfig =
+    COUNTRY_PHONE_CONFIG.find((c) => c.code === guardianCountry) || COUNTRY_PHONE_CONFIG[0];
+
+  // KeyDown filtering: strictly digits and control keys; prevent typing when maxDigits reached
+  const handlePhoneKeyDown = (e, currentDigits, countryCode) => {
+    if (
+      ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter', 'Home', 'End'].includes(e.key) ||
+      e.ctrlKey ||
+      e.metaKey
+    ) {
+      return;
+    }
+    if (!/^\d$/.test(e.key)) {
+      e.preventDefault();
+      return;
+    }
+    const cfg = COUNTRY_PHONE_CONFIG.find((c) => c.code === countryCode) || COUNTRY_PHONE_CONFIG[0];
+    const clean = String(currentDigits).replace(/\D/g, '');
+    if (clean.length >= cfg.maxDigits) {
+      e.preventDefault();
+    }
+  };
+
+  // Input change handler with Backspace preservation and country digit trimming
+  const handlePhoneChange = (setter, currentDigits, countryCode) => (e) => {
+    const cfg = COUNTRY_PHONE_CONFIG.find((c) => c.code === countryCode) || COUNTRY_PHONE_CONFIG[0];
+    let digits = e.target.value.replace(/\D/g, '');
+    // If Backspace deleted a formatting space/hyphen, strip the trailing digit
+    if (
+      e.nativeEvent &&
+      e.nativeEvent.inputType === 'deleteContentBackward' &&
+      digits.length === currentDigits.length &&
+      currentDigits.length > 0
+    ) {
+      digits = digits.slice(0, -1);
+    }
+    setter(digits.slice(0, cfg.maxDigits));
+  };
 
   // Handle Login & Registration Submit with strict pre-submission validation
   const handleAuthSubmit = async (e) => {
@@ -109,7 +156,7 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
         return;
       }
       if (ageVal.isPediatric && !parentPhoneVal.isValid) {
-        setError('Pediatric assent requires a valid Parent / Guardian Contact Number.');
+        setError(`Pediatric assent requires a valid Parent / Guardian Contact Number: ${parentPhoneVal.message}`);
         return;
       }
       if (!emailVal.isValid) {
@@ -147,10 +194,12 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
           age: ageVal.ageNum,
           gender,
           blood_group: bloodGroup,
-          phone_number: phoneNumber.trim(),
+          phone_number: phoneVal.fullPhone || (phoneNumber.trim() ? `${currentPatientConfig.dialCode} ${phoneNumber.trim()}` : ''),
           parent_name: parentName.trim(),
           parent_relation: parentRelation,
-          parent_phone: parentPhone.trim(),
+          parent_phone: parentPhoneVal.isValid
+            ? parentPhoneVal.fullPhone
+            : (parentPhone.trim() ? `${currentGuardianConfig.dialCode} ${parentPhone.trim()}` : ''),
           role: 'patient',
         };
 
@@ -525,26 +574,87 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
                   </div>
                 </div>
 
-                {/* Patient Phone Number */}
+                {/* Patient Phone Number with Country Selector & Real-Time Formatting */}
                 <div className="form-group" style={{ marginBottom: '18px' }}>
                   <label className="form-label" htmlFor="regPhone" style={{ fontWeight: 700 }}>
                     Patient Contact Number <span style={{ color: '#dc2626' }}>*</span>
                   </label>
-                  <input
-                    id="regPhone"
-                    type="tel"
-                    className={`form-input ${touched.phoneNumber ? (phoneVal.isValid ? 'is-valid' : 'is-invalid') : ''}`}
-                    placeholder="e.g. +91 9876543210 (10 digits)"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    onBlur={() => markTouched('phoneNumber')}
-                    required
-                  />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+                    {/* Country Selector Dropdown */}
+                    <div style={{ minWidth: '140px', maxWidth: '175px' }}>
+                      <select
+                        id="patientCountrySelect"
+                        className="form-input"
+                        style={{
+                          height: '100%',
+                          fontWeight: 600,
+                          fontSize: '0.84rem',
+                          background: '#f8fafc',
+                          cursor: 'pointer',
+                          padding: '0 8px',
+                        }}
+                        value={patientCountry}
+                        onChange={(e) => {
+                          setPatientCountry(e.target.value);
+                          markTouched('phoneNumber');
+                        }}
+                      >
+                        {COUNTRY_PHONE_CONFIG.map((c) => (
+                          <option key={c.code} value={c.code}>
+                            {c.flag} {c.name} ({c.dialCode})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Formatted Phone Input */}
+                    <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+                      <span
+                        style={{
+                          position: 'absolute',
+                          left: '12px',
+                          fontWeight: 700,
+                          color: '#475569',
+                          fontSize: '0.88rem',
+                          pointerEvents: 'none',
+                          userSelect: 'none',
+                        }}
+                      >
+                        {currentPatientConfig.dialCode}
+                      </span>
+                      <input
+                        id="regPhone"
+                        type="tel"
+                        className={`form-input ${touched.phoneNumber ? (phoneVal.isValid ? 'is-valid' : 'is-invalid') : ''}`}
+                        style={{
+                          paddingLeft: `${currentPatientConfig.dialCode.length * 8 + 22}px`,
+                          letterSpacing: '0.5px',
+                        }}
+                        placeholder={currentPatientConfig.placeholder}
+                        value={formatPhoneByCountry(phoneNumber, patientCountry)}
+                        onChange={handlePhoneChange(setPhoneNumber, phoneNumber, patientCountry)}
+                        onKeyDown={(e) => handlePhoneKeyDown(e, phoneNumber, patientCountry)}
+                        onBlur={() => markTouched('phoneNumber')}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Telecom Rules & Character Counter */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', fontSize: '0.76rem' }}>
+                    <span style={{ color: '#64748b' }}>
+                      {currentPatientConfig.flag} Format: {currentPatientConfig.hint}
+                    </span>
+                    <span style={{ fontWeight: 600, color: phoneNumber.length === currentPatientConfig.maxDigits ? '#16a34a' : '#64748b' }}>
+                      {phoneNumber.length} / {currentPatientConfig.maxDigits} digits
+                    </span>
+                  </div>
+
                   {touched.phoneNumber && !phoneVal.isValid && (
                     <div className="field-error-msg">⚠️ {phoneVal.message}</div>
                   )}
                   {touched.phoneNumber && phoneVal.isValid && (
-                    <div className="field-success-msg">✓ Valid contact number</div>
+                    <div className="field-success-msg">✓ {phoneVal.message}</div>
                   )}
                 </div>
 
@@ -606,18 +716,82 @@ export default function AuthPage({ onLoginSuccess, navigate }) {
                     <label className="form-label" htmlFor="parentPhone" style={{ fontWeight: 600, fontSize: '0.82rem' }}>
                       Guardian Contact Phone <span style={{ color: '#dc2626' }}>*</span>
                     </label>
-                    <input
-                      id="parentPhone"
-                      type="tel"
-                      className={`form-input ${touched.parentPhone ? (parentPhoneVal.isValid ? 'is-valid' : 'is-invalid') : ''}`}
-                      placeholder="e.g. +91 9123456789 (10 digits)"
-                      value={parentPhone}
-                      onChange={(e) => setParentPhone(e.target.value)}
-                      onBlur={() => markTouched('parentPhone')}
-                      required
-                    />
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+                      {/* Guardian Country Selector Dropdown */}
+                      <div style={{ minWidth: '140px', maxWidth: '175px' }}>
+                        <select
+                          id="guardianCountrySelect"
+                          className="form-input"
+                          style={{
+                            height: '100%',
+                            fontWeight: 600,
+                            fontSize: '0.84rem',
+                            background: '#f8fafc',
+                            cursor: 'pointer',
+                            padding: '0 8px',
+                          }}
+                          value={guardianCountry}
+                          onChange={(e) => {
+                            setGuardianCountry(e.target.value);
+                            markTouched('parentPhone');
+                          }}
+                        >
+                          {COUNTRY_PHONE_CONFIG.map((c) => (
+                            <option key={c.code} value={c.code}>
+                              {c.flag} {c.name} ({c.dialCode})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Guardian Formatted Phone Input */}
+                      <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+                        <span
+                          style={{
+                            position: 'absolute',
+                            left: '12px',
+                            fontWeight: 700,
+                            color: '#475569',
+                            fontSize: '0.88rem',
+                            pointerEvents: 'none',
+                            userSelect: 'none',
+                          }}
+                        >
+                          {currentGuardianConfig.dialCode}
+                        </span>
+                        <input
+                          id="parentPhone"
+                          type="tel"
+                          className={`form-input ${touched.parentPhone ? (parentPhoneVal.isValid ? 'is-valid' : 'is-invalid') : ''}`}
+                          style={{
+                            paddingLeft: `${currentGuardianConfig.dialCode.length * 8 + 22}px`,
+                            letterSpacing: '0.5px',
+                          }}
+                          placeholder={currentGuardianConfig.placeholder}
+                          value={formatPhoneByCountry(parentPhone, guardianCountry)}
+                          onChange={handlePhoneChange(setParentPhone, parentPhone, guardianCountry)}
+                          onKeyDown={(e) => handlePhoneKeyDown(e, parentPhone, guardianCountry)}
+                          onBlur={() => markTouched('parentPhone')}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Telecom Rules & Character Counter */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', fontSize: '0.76rem' }}>
+                      <span style={{ color: '#64748b' }}>
+                        {currentGuardianConfig.flag} Format: {currentGuardianConfig.hint}
+                      </span>
+                      <span style={{ fontWeight: 600, color: parentPhone.length === currentGuardianConfig.maxDigits ? '#16a34a' : '#64748b' }}>
+                        {parentPhone.length} / {currentGuardianConfig.maxDigits} digits
+                      </span>
+                    </div>
+
                     {touched.parentPhone && !parentPhoneVal.isValid && (
                       <div className="field-error-msg">⚠️ {parentPhoneVal.message}</div>
+                    )}
+                    {touched.parentPhone && parentPhoneVal.isValid && (
+                      <div className="field-success-msg">✓ {parentPhoneVal.message}</div>
                     )}
                   </div>
                 </div>

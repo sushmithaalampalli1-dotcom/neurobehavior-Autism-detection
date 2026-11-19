@@ -71,23 +71,114 @@ export function evaluatePasswordStrength(password) {
   };
 }
 
-// 3. Phone Number Validator (supports standard 10-digit formats with optional +91 or + country prefix)
+// 3. Country-Specific Phone Rules and Formats
+export const COUNTRY_PHONE_CONFIG = [
+  { code: 'IN', name: 'India', dialCode: '+91', flag: '🇮🇳', minDigits: 10, maxDigits: 10, startsWith: /^[6-9]/, placeholder: '98765 43210', hint: '10 digits starting with 6, 7, 8, or 9' },
+  { code: 'US', name: 'United States', dialCode: '+1', flag: '🇺🇸', minDigits: 10, maxDigits: 10, startsWith: /^[2-9]/, placeholder: '(555) 012-3456', hint: '10 digits starting with 2-9' },
+  { code: 'GB', name: 'United Kingdom', dialCode: '+44', flag: '🇬🇧', minDigits: 10, maxDigits: 11, startsWith: /^7/, placeholder: '7911 123456', hint: '10-11 digits starting with 7' },
+  { code: 'AE', name: 'UAE', dialCode: '+971', flag: '🇦🇪', minDigits: 9, maxDigits: 9, startsWith: /^5/, placeholder: '50 123 4567', hint: '9 digits starting with 5' },
+  { code: 'AU', name: 'Australia', dialCode: '+61', flag: '🇦🇺', minDigits: 9, maxDigits: 9, startsWith: /^4/, placeholder: '412 345 678', hint: '9 digits starting with 4' },
+  { code: 'CA', name: 'Canada', dialCode: '+1', flag: '🇨🇦', minDigits: 10, maxDigits: 10, startsWith: /^[2-9]/, placeholder: '(555) 012-3456', hint: '10 digits starting with 2-9' },
+  { code: 'SG', name: 'Singapore', dialCode: '+65', flag: '🇸🇬', minDigits: 8, maxDigits: 8, startsWith: /^[89]/, placeholder: '8123 4567', hint: '8 digits starting with 8 or 9' },
+  { code: 'DE', name: 'Germany', dialCode: '+49', flag: '🇩🇪', minDigits: 10, maxDigits: 11, startsWith: /^1/, placeholder: '151 23456789', hint: '10-11 digits' },
+  { code: 'SA', name: 'Saudi Arabia', dialCode: '+966', flag: '🇸🇦', minDigits: 9, maxDigits: 9, startsWith: /^5/, placeholder: '50 123 4567', hint: '9 digits starting with 5' },
+  { code: 'QA', name: 'Qatar', dialCode: '+974', flag: '🇶🇦', minDigits: 8, maxDigits: 8, startsWith: /^[3567]/, placeholder: '3312 3456', hint: '8 digits' },
+  { code: 'MY', name: 'Malaysia', dialCode: '+60', flag: '🇲🇾', minDigits: 9, maxDigits: 10, startsWith: /^1/, placeholder: '12 345 6789', hint: '9-10 digits starting with 1' },
+];
+
+export function formatPhoneByCountry(digits, countryCode = 'IN') {
+  if (!digits) return '';
+  const d = String(digits).replace(/\D/g, '');
+  if (countryCode === 'IN') {
+    if (d.length <= 5) return d;
+    return `${d.slice(0, 5)} ${d.slice(5, 10)}`;
+  }
+  if (countryCode === 'US' || countryCode === 'CA') {
+    if (d.length <= 3) return d;
+    if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
+    return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6, 10)}`;
+  }
+  if (countryCode === 'GB') {
+    if (d.length <= 4) return d;
+    return `${d.slice(0, 4)} ${d.slice(4, 11)}`;
+  }
+  if (countryCode === 'AE' || countryCode === 'SA') {
+    if (d.length <= 2) return d;
+    if (d.length <= 5) return `${d.slice(0, 2)} ${d.slice(2)}`;
+    return `${d.slice(0, 2)} ${d.slice(2, 5)} ${d.slice(5, 9)}`;
+  }
+  if (countryCode === 'AU') {
+    if (d.length <= 3) return d;
+    if (d.length <= 6) return `${d.slice(0, 3)} ${d.slice(3)}`;
+    return `${d.slice(0, 3)} ${d.slice(3, 6)} ${d.slice(6, 9)}`;
+  }
+  if (countryCode === 'SG' || countryCode === 'QA') {
+    if (d.length <= 4) return d;
+    return `${d.slice(0, 4)} ${d.slice(4, 8)}`;
+  }
+  return d;
+}
+
+export function validateCountryPhoneNumber(rawDigits, countryCode = 'IN') {
+  if (!rawDigits || typeof rawDigits !== 'string') {
+    return { isValid: false, message: 'Contact phone number is required.' };
+  }
+  const cleanDigits = String(rawDigits).replace(/\D/g, '');
+  const config = COUNTRY_PHONE_CONFIG.find((c) => c.code === countryCode) || COUNTRY_PHONE_CONFIG[0];
+
+  if (!cleanDigits) {
+    return { isValid: false, message: `Please enter a valid ${config.name} phone number.` };
+  }
+  if (cleanDigits.length < config.minDigits) {
+    const requiredStr = config.minDigits === config.maxDigits ? `${config.minDigits} digits` : `${config.minDigits}-${config.maxDigits} digits`;
+    return {
+      isValid: false,
+      message: `${config.name} phone number must be ${requiredStr} (currently ${cleanDigits.length}).`,
+    };
+  }
+  if (cleanDigits.length > config.maxDigits) {
+    return {
+      isValid: false,
+      message: `${config.name} phone number cannot exceed ${config.maxDigits} digits.`,
+    };
+  }
+  if (config.startsWith && !config.startsWith.test(cleanDigits)) {
+    return {
+      isValid: false,
+      message: `Invalid starting digit for ${config.name}. Must follow: ${config.hint}.`,
+    };
+  }
+  // Reject identical repeating digits (e.g. 9999999999 or 0000000000)
+  if (/^(\d)\1+$/.test(cleanDigits)) {
+    return { isValid: false, message: 'Repeated placeholder numbers are not allowed.' };
+  }
+
+  return {
+    isValid: true,
+    message: `Valid ${config.name} number: ${config.dialCode} ${formatPhoneByCountry(cleanDigits, config.code)}`,
+    fullPhone: `${config.dialCode} ${cleanDigits}`,
+    formatted: formatPhoneByCountry(cleanDigits, config.code),
+    dialCode: config.dialCode,
+    cleanDigits,
+  };
+}
+
+// 3b. Phone Number Validator (backward compatibility wrapper)
 export function validatePhoneNumber(phone) {
   if (!phone || typeof phone !== 'string') {
     return { isValid: false, message: 'Contact phone number is required.' };
   }
   const cleanDigits = phone.replace(/[^0-9]/g, '');
   
-  if (cleanDigits.length < 10) {
-    return { isValid: false, message: 'Phone number must be at least 10 digits.' };
+  if (cleanDigits.length < 8) {
+    return { isValid: false, message: 'Phone number must be at least 8 digits.' };
   }
   if (cleanDigits.length > 15) {
     return { isValid: false, message: 'Phone number cannot exceed 15 digits.' };
   }
   
-  // Reject obvious junk repeated digits like 0000000000 or 1111111111
-  const last10 = cleanDigits.slice(-10);
-  if (/^(\d)\1{9}$/.test(last10)) {
+  const last8 = cleanDigits.slice(-8);
+  if (/^(\d)\1{7,}$/.test(last8)) {
     return { isValid: false, message: 'Please enter a valid, active phone number.' };
   }
 
