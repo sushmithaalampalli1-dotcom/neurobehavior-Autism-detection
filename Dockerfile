@@ -32,10 +32,14 @@ COPY backend/ ./backend/
 COPY training/ ./training/
 COPY demo_samples/ ./demo_samples/
 COPY wsgi.py .
+COPY run_server.py .
 COPY .env.example .env
 
 # Copy compiled frontend from Stage 1
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
+
+# Intercept and wrap gunicorn to guarantee literal '$PORT' is always resolved
+RUN printf '#!/bin/sh\nexec python /app/run_server.py "$@"\n' > /usr/local/bin/gunicorn && chmod +x /usr/local/bin/gunicorn
 
 # Production environment configuration
 ENV FLASK_ENV=production
@@ -44,5 +48,5 @@ ENV PYTHONUNBUFFERED=1
 # Expose default ports for Render (10000), Hugging Face Spaces (7860), and local (5000)
 EXPOSE 5000 7860 10000
 
-# Start unified production server (1 worker with 4 threads for low-memory footprint <250MB, compatible with Render free tier 512MB and HF Spaces 16GB)
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-7860} --workers 1 --threads 4 --timeout 180 --worker-class gthread wsgi:app"]
+# Start unified production server via run_server.py
+CMD ["python", "run_server.py"]
