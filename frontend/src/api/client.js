@@ -12,9 +12,9 @@ const USER_KEY = 'neurobehavior_auth_user';
 
 export const authStorage = {
   getToken() {
-    return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY) || null;
+    return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY) || null;
   },
-  setToken(token, persist = false) {
+  setToken(token, persist = true) {
     if (token) {
       sessionStorage.setItem(TOKEN_KEY, token);
       if (persist) localStorage.setItem(TOKEN_KEY, token);
@@ -25,13 +25,13 @@ export const authStorage = {
   },
   getUser() {
     try {
-      const u = sessionStorage.getItem(USER_KEY) || localStorage.getItem(USER_KEY);
+      const u = localStorage.getItem(USER_KEY) || sessionStorage.getItem(USER_KEY);
       return u ? JSON.parse(u) : null;
     } catch {
       return null;
     }
   },
-  setUser(user, persist = false) {
+  setUser(user, persist = true) {
     if (user) {
       sessionStorage.setItem(USER_KEY, JSON.stringify(user));
       if (persist) localStorage.setItem(USER_KEY, JSON.stringify(user));

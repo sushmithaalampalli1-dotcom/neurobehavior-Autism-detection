@@ -19,8 +19,17 @@ class Config:
     # Security
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production-neurobehavior-asd")
 
+    # Persistence: Use persistent volume directory /data if mounted (e.g., Railway Volume)
+    _volume_path = os.getenv("RAILWAY_VOLUME_MOUNT_PATH")
+    if _volume_path and Path(_volume_path).is_dir():
+        STORAGE_DIR = Path(_volume_path)
+    elif Path("/data").is_dir():
+        STORAGE_DIR = Path("/data")
+    else:
+        STORAGE_DIR = BASE_DIR
+
     # Database
-    DATABASE_PATH = BASE_DIR / "neurobehavior_asd.db"
+    DATABASE_PATH = STORAGE_DIR / "neurobehavior_asd.db"
     _raw_db_url = os.getenv("DATABASE_URL")
     if _raw_db_url and _raw_db_url.startswith("postgres://"):
         _raw_db_url = _raw_db_url.replace("postgres://", "postgresql://", 1)
@@ -31,12 +40,12 @@ class Config:
     CORS_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
 
     # File Uploads
-    UPLOAD_FOLDER = BASE_DIR / os.getenv("UPLOAD_FOLDER", "uploads/mri")
+    UPLOAD_FOLDER = STORAGE_DIR / os.getenv("UPLOAD_FOLDER", "uploads/mri")
     MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH_MB", "250")) * 1024 * 1024
     ALLOWED_EXTENSIONS = {".nii", ".nii.gz", ".png"}
 
     # PDF Reports
-    REPORTS_DIR = BASE_DIR / "reports" / "generated"
+    REPORTS_DIR = STORAGE_DIR / "reports" / "generated"
 
     # MRI Deep Learning Model
     MODEL_25D_PATH = BASE_DIR / "training" / "saved_models" / "neurobehavior_25d_cnn.keras"

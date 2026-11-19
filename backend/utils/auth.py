@@ -31,8 +31,8 @@ def generate_auth_token(user_id: int, role: str) -> str:
     })
 
 
-def verify_auth_token(token: str, max_age: int = 86400) -> Optional[Dict[str, Any]]:
-    """Verify auth token validity, signature, and expiration (default 24h)."""
+def verify_auth_token(token: str, max_age: int = 604800) -> Optional[Dict[str, Any]]:
+    """Verify auth token validity, signature, and expiration (default 7 days)."""
     if not token or token in _REVOKED_TOKENS:
         return None
     serializer = get_serializer()
