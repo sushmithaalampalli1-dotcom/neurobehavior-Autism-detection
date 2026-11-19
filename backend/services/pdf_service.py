@@ -334,22 +334,18 @@ class PDFReportService:
         elements.append(Paragraph("1. PATIENT DEMOGRAPHICS & GUARDIAN PROFILE", section_heading))
         elements.append(HRFlowable(width="100%", thickness=1.5, color=navy_dark, spaceBefore=1, spaceAfter=4))
 
-        pat_name = assessment_data.get("patient_name") or "xyz"
-        pat_hash = hashlib.md5(f"pat_{pat_name}".encode()).hexdigest()[:4].upper()
-        pat_id = f"NB-PAT-2026-{pat_hash}"
+        pat_name = assessment_data.get("patient_name") or "Patient"
 
         raw_age = assessment_data.get("age", 21.0)
         try:
             age_float = float(raw_age)
             age_str = f"{age_float:.1f} Years"
-            is_adult = age_float >= 18.0
         except Exception:
             age_str = "21.0 Years"
-            is_adult = True
 
         gender_str = assessment_data.get("gender") or "Female"
         blood_grp = assessment_data.get("blood_group") or "B-"
-        minor_status = "Adult (18+ yrs)" if is_adult else "Pediatric (<18 yrs)"
+        pat_phone = assessment_data.get("patient_phone") or "Not Specified"
 
         parent_name = assessment_data.get("parent_name")
         parent_rel = assessment_data.get("parent_relation")
@@ -360,16 +356,14 @@ class PDFReportService:
             ph_label = f" - Ph: {parent_ph}" if parent_ph else ""
             guardian_str = f"{parent_name}{rel_label}{ph_label}"
         else:
-            guardian_str = "Self (Adult Consent)" if is_adult else "Parent / Legal Guardian Consent"
-
-        consent_status = "Recorded & Verified (Adult Patient)" if is_adult else "Recorded & Verified (Parent/Guardian Assent)"
+            guardian_str = "Not Specified"
 
         sec1_rows = [
             [
                 Paragraph("<b>Patient Full Name:</b>", cell_label),
                 Paragraph(pat_name, cell_value),
-                Paragraph("<b>Patient ID:</b>", cell_label),
-                Paragraph(pat_id, cell_value),
+                Paragraph("<b>Contact Number:</b>", cell_label),
+                Paragraph(pat_phone, cell_value),
             ],
             [
                 Paragraph("<b>Age:</b>", cell_label),
@@ -380,14 +374,8 @@ class PDFReportService:
             [
                 Paragraph("<b>Blood Group:</b>", cell_label),
                 Paragraph(blood_grp, cell_value),
-                Paragraph("<b>Minor Status:</b>", cell_label),
-                Paragraph(minor_status, cell_value),
-            ],
-            [
-                Paragraph("<b>Guardian / Consent:</b>", cell_label),
+                Paragraph("<b>Guardian / Caregiver:</b>", cell_label),
                 Paragraph(guardian_str, cell_value),
-                Paragraph("<b>Consent Status:</b>", cell_label),
-                Paragraph(consent_status, cell_value),
             ],
         ]
 

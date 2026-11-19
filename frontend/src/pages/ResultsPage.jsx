@@ -72,7 +72,6 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
     (activeMriResult?.assessment_id || activeQuestionnaireResult?.assessment_id) ||
     (user?.id ? `USR${user.id}` : '001')
   )}`;
-  const patientId = user?.id ? `NB-PAT-2026-${String(user.id).padStart(4, '0')}` : 'NB-PAT-2026-6A5F';
   const reportDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' IST';
 
   // Resolved MRI scan preview image (Direct base64, URL, or API endpoint)
@@ -83,14 +82,12 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
        (mriFilename ? `/api/mri/file/${mriFilename}` : null))
     : null;
 
-  // Age & Guardian calculations strictly based on registered profile
+  // Registered patient details
   const ageNum = parseFloat(registeredAge) || 21.0;
-  const isAdult = ageNum >= 18;
-  const minorStatus = isAdult ? 'Adult (18+ yrs)' : 'Pediatric (<18 yrs)';
-  const guardianStatus = user?.parent_name
+  const patientPhone = user?.phone_number || 'Not Specified';
+  const guardianDetails = user?.parent_name
     ? `${user.parent_name} (${user.parent_relation || 'Parent/Guardian'})${user.parent_phone ? ` - Ph: ${user.parent_phone}` : ''}`
-    : (isAdult ? 'Self (Adult Consent)' : 'Parent / Legal Guardian Consent');
-  const consentStatus = isAdult ? 'Recorded & Verified (Adult Patient)' : 'Recorded & Verified (Parent/Guardian Assent)';
+    : 'Not Specified';
 
   const handleGenerateReport = async () => {
     if (!hasAssessment) {
@@ -112,6 +109,7 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
         patient_age: String(ageNum),
         patient_gender: registeredGender,
         blood_group: registeredBloodGroup,
+        patient_phone: patientPhone,
         mri_filename: hasMri ? mriFilename : null,
         image_base64: hasMri ? (activeMriResult?.image_base64 || activeMriResult?.previewUrl) : null,
         clinical_notes: 'Screening report generated from patient evaluation session.',
@@ -221,7 +219,7 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
             </h4>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '10px', fontSize: '0.84rem' }}>
               <div><strong>Patient Full Name:</strong> {user?.full_name || 'N/A'}</div>
-              <div><strong>Patient ID:</strong> {patientId}</div>
+              <div><strong>Contact Number:</strong> {patientPhone}</div>
               <div><strong>Age:</strong> {user?.age ? `${user.age} Years` : (patientAge ? `${patientAge} Years` : 'Unspecified')}</div>
               <div><strong>Gender:</strong> {user?.gender || patientGender || 'Unspecified'}</div>
               <div><strong>Blood Group:</strong> {user?.blood_group || bloodGroup || 'Unspecified'}</div>
@@ -327,10 +325,10 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
                     <strong style={{ color: 'var(--navy)' }}>{registeredName}</strong>
                   </td>
                   <td style={{ width: '20%', background: '#f8fafc', padding: '6px 10px', fontWeight: 700, borderRight: '1px solid #e2e8f0' }}>
-                    Patient ID:
+                    Contact Number:
                   </td>
                   <td style={{ width: '30%', padding: '6px 10px' }}>
-                    <strong>{patientId}</strong>
+                    <strong style={{ color: 'var(--navy)' }}>{patientPhone}</strong>
                   </td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
@@ -347,7 +345,7 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
                     <strong style={{ color: 'var(--navy)' }}>{registeredGender}</strong>
                   </td>
                 </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                <tr>
                   <td style={{ background: '#f8fafc', padding: '6px 10px', fontWeight: 700, borderRight: '1px solid #e2e8f0' }}>
                     Blood Group:
                   </td>
@@ -355,24 +353,10 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
                     <strong style={{ color: 'var(--navy)' }}>{registeredBloodGroup}</strong>
                   </td>
                   <td style={{ background: '#f8fafc', padding: '6px 10px', fontWeight: 700, borderRight: '1px solid #e2e8f0' }}>
-                    Minor Status:
+                    Guardian / Caregiver:
                   </td>
                   <td style={{ padding: '6px 10px' }}>
-                    {minorStatus}
-                  </td>
-                </tr>
-                <tr>
-                  <td style={{ background: '#f8fafc', padding: '6px 10px', fontWeight: 700, borderRight: '1px solid #e2e8f0' }}>
-                    Guardian / Consent:
-                  </td>
-                  <td style={{ padding: '6px 10px', borderRight: '1px solid #e2e8f0' }}>
-                    {guardianStatus}
-                  </td>
-                  <td style={{ background: '#f8fafc', padding: '6px 10px', fontWeight: 700, borderRight: '1px solid #e2e8f0' }}>
-                    Consent Status:
-                  </td>
-                  <td style={{ padding: '6px 10px' }}>
-                    {consentStatus}
+                    {guardianDetails}
                   </td>
                 </tr>
               </tbody>
