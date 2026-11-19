@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api/client';
-import { validateAge, validateFullName } from '../utils/validators';
 
 export default function ResultsPage({ user, navigate, activeMriResult, activeQuestionnaireResult }) {
   const [assessments, setAssessments] = useState([]);
@@ -23,15 +22,6 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
     loadAssessments();
   }, []);
 
-  useEffect(() => {
-    if (user) {
-      if (user.full_name) setPatientName(user.full_name);
-      if (user.age) setPatientAge(String(user.age));
-      if (user.gender) setPatientGender(user.gender);
-      if (user.blood_group) setBloodGroup(user.blood_group);
-    }
-  }, [user]);
-
   const loadAssessments = async () => {
     setLoading(true);
     try {
@@ -44,36 +34,64 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
     }
   };
 
-  // Strictly display clinical assessment report ONLY when the user has actively uploaded/entered assessment data in this session!
-  // If the user has not run an assessment in this session, hasAssessment is strictly FALSE (shows empty report state).
-  // This ensures demo accounts, direct navigation, and fresh logins never show stale or demo MRI data.
-  const hasMri = Boolean(activeMriResult);
-  const hasQuestionnaire = Boolean(activeQuestionnaireResult);
-  const hasAssessment = hasMri || hasQuestionnaire;
+  // Look for latest MRI and Questionnaire in active session or database records
+  const latestDbMri = assessments.find(a => a.assessment_type === 'mri' || a.mri_filename);
+  const latestDbQuest = assessments.find(a => a.assessment_type === 'questionnaire' || a.questionnaire_responses);
 
-  // Resolve MRI assessment data (strictly from active session)
-  const mriFilename = hasMri ? activeMriResult?.filename : null;
+  const effectiveMriResult = activeMriResult || (latestDbMri ? {
+    assessment_id: latestDbMri.id,
+    filename: latestDbMri.mri_filename,
+    prediction: {
+      dx_group: latestDbMri.predicted_dx_group,
+      label: latestDbMri.predicted_dx_group === 1 ? 'Autism' : 'Non Autism',
+      result: latestDbMri.predicted_dx_group === 1 ? 'Autism' : 'Non Autism',
+      confidence: latestDbMri.prediction_confidence,
+    }
+  } : null);
+
+  const effectiveQuestionnaireResult = activeQuestionnaireResult || (latestDbQuest ? (() => {
+    let parsed = null;
+    try {
+      parsed = typeof latestDbQuest.questionnaire_responses === 'string'
+        ? JSON.parse(latestDbQuest.questionnaire_responses)
+        : latestDbQuest.questionnaire_responses;
+    } catch {
+      parsed = null;
+    }
+    return {
+      assessment_id: latestDbQuest.id,
+      score: parsed?.score_result?.total_score ?? (latestDbQuest.predicted_dx_group === 1 ? 4 : 1),
+      responses: parsed?.responses || {},
+    };
+  })() : null);
+
+  const hasMri = Boolean(effectiveMriResult);
+  const hasQuestionnaire = Boolean(effectiveQuestionnaireResult);
+  const hasAssessment = hasMri || hasQuestionnaire || assessments.length > 0;
+
+  // Resolve MRI assessment data
+  const mriFilename = hasMri ? effectiveMriResult?.filename : null;
 
   const mriAsd = hasMri && Boolean(
-    (activeMriResult?.prediction?.dx_group === 1) ||
-    (activeMriResult?.prediction?.label?.toLowerCase().includes('autism')) ||
-    (activeMriResult?.prediction?.result?.toLowerCase().includes('autism'))
+    (effectiveMriResult?.prediction?.dx_group === 1) ||
+    (effectiveMriResult?.prediction?.label?.toLowerCase().includes('autism')) ||
+    (effectiveMriResult?.prediction?.result?.toLowerCase().includes('autism'))
   );
 
-  const mriConfidence = hasMri ? activeMriResult?.prediction?.confidence : null;
+  const mriConfidence = hasMri ? effectiveMriResult?.prediction?.confidence : null;
   const mriConfidencePercent = mriConfidence !== null ? (Number(mriConfidence) * 100).toFixed(1) : null;
   const mriRawScore = mriConfidence !== null ? Number(mriConfidence).toFixed(4) : null;
 
-  // Resolve Questionnaire assessment data (strictly from active session)
-  const questScore = hasQuestionnaire ? (activeQuestionnaireResult?.score ?? null) : null;
+  // Resolve Questionnaire assessment data
+  const questScore = hasQuestionnaire ? (effectiveQuestionnaireResult?.score ?? null) : null;
 
   const reportDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' IST';
 
   // Resolved MRI scan preview image (Direct base64, URL, or API endpoint)
   const mriPreviewUrl = hasMri
-    ? (activeMriResult?.image_base64 ||
-       activeMriResult?.previewUrl ||
-       activeMriResult?.image_url ||
+    ? (effectiveMriResult?.image_base64 ||
+       effectiveMriResult?.previewUrl ||
+       effectiveMriResult?.image_url ||
        (mriFilename ? `/api/mri/file/${mriFilename}` : null))
     : null;
 
@@ -95,9 +113,11 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
     setReportSuccess(null);
 
     try {
-      const targetId = hasActiveSession
-        ? (activeMriResult?.assessment_id || activeQuestionnaireResult?.assessment_id || null)
-        : (assessments[0]?.id || null);
+      const targetId = (
+        effectiveMriResult?.assessment_id ||
+        effectiveQuestionnaireResult?.assessment_id ||
+        (assessments.length > 0 ? assessments[0]?.id : null)
+      );
       const payload = {
         assessment_id: targetId,
         patient_name: registeredName.trim(),
@@ -109,7 +129,7 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
         parent_phone: registeredParentPhone,
         parent_relation: registeredParentRelation,
         mri_filename: hasMri ? mriFilename : null,
-        image_base64: hasMri ? (activeMriResult?.image_base64 || activeMriResult?.previewUrl) : null,
+        image_base64: hasMri ? (effectiveMriResult?.image_base64 || effectiveMriResult?.previewUrl) : null,
         clinical_notes: 'Screening report generated from patient evaluation session.',
       };
       const res = await api.generateReport(payload);
@@ -122,8 +142,12 @@ export default function ResultsPage({ user, navigate, activeMriResult, activeQue
         message: 'Doctor-readable report PDF generated successfully.',
       });
 
-      // Open PDF in new tab
-      window.open(downloadUrl, '_blank');
+      // Attempt opening PDF in new tab
+      try {
+        window.open(downloadUrl, '_blank');
+      } catch (openErr) {
+        console.warn('Popup blocked:', openErr);
+      }
     } catch (err) {
       setError(err.message || 'Failed to generate report.');
     } finally {
