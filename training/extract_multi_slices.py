@@ -45,6 +45,23 @@ class MultiSlice25DExtractor:
             gray_image = gray_image.resize(cls.TARGET_SIZE, Image.Resampling.BILINEAR)
 
         arr_u8 = np.array(gray_image, dtype=np.uint8)
+
+        # Auto-detect inverted background (light background / dark brain often from web screenshots or articles)
+        corners = [
+            arr_u8[:20, :20], arr_u8[:20, -20:],
+            arr_u8[-20:, :20], arr_u8[-20:, -20:]
+        ]
+        corner_mean = float(np.mean([np.mean(c) for c in corners]))
+        center_mean = float(np.mean(arr_u8[60:164, 60:164]))
+        if corner_mean > 120 and corner_mean > center_mean:
+            # Invert so background is standard radiological dark air
+            arr_u8 = 255 - arr_u8
+
+        # Robust dynamic range contrast normalization for web images (percentile contrast stretch)
+        p1, p99 = np.percentile(arr_u8, (1, 99))
+        if p99 > p1 + 10:
+            arr_u8 = np.clip((arr_u8.astype(np.float32) - p1) / (p99 - p1) * 255.0, 0, 255).astype(np.uint8)
+
         arr_f32 = arr_u8.astype(np.float32) / 255.0
 
         # Channel 1: Raw intensity
