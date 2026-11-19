@@ -4,7 +4,7 @@ Project: Deep Learning-Based Autism Detection Using Brain Imaging Biomarkers
 and Behavioral Features with Personalized Support System.
 """
 import os
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, current_app
 from backend.config import config_by_name, BASE_DIR
 from backend.extensions import db, cors
 from backend.routes import (
@@ -213,9 +213,63 @@ def _seed_demo_personas():
                 u.parent_phone = d["parent_phone"]
             if d.get("parent_relation") and not u.parent_relation:
                 u.parent_relation = d["parent_relation"]
-        # Ensure demo patient starts with an empty assessment slate so no stale MRI/report is shown
+        # Ensure demo patient has a complete verified assessment ready for demonstration if none exists
         if u and u.role == "patient":
-            Assessment.query.filter_by(user_id=u.id).delete()
+            existing_count = Assessment.query.filter_by(user_id=u.id).count()
+            if existing_count == 0:
+                import json
+                import shutil
+                from pathlib import Path
+
+                # Ensure demo sample scan is accessible in UPLOAD_FOLDER
+                upload_dir = Path(current_app.config["UPLOAD_FOLDER"])
+                demo_file = BASE_DIR / "demo_samples" / "sample_asd_28684.png"
+                if demo_file.exists() and not (upload_dir / "sample_asd_28684.png").exists():
+                    shutil.copy2(str(demo_file), str(upload_dir / "sample_asd_28684.png"))
+
+                demo_mri = Assessment(
+                    user_id=u.id,
+                    assessment_type="mri",
+                    status="evaluated_deep_learning",
+                    mri_filename="sample_asd_28684.png",
+                    mri_filepath=str(upload_dir / "sample_asd_28684.png"),
+                    mri_dimensions="224x224",
+                    mri_voxel_size="1.0mm",
+                    model_version="NeuroBehavior Boosted Structural Biomarker Model (2.5D CNN)",
+                    model_inference_status="Biomarker evaluation complete: Autism",
+                    predicted_dx_group=1,
+                    prediction_confidence=0.9520,
+                    clinical_disclaimer_accepted=True,
+                    notes="Demonstration baseline evaluation matching ABIDE Subject 28684.",
+                )
+                db.session.add(demo_mri)
+
+                demo_quest = Assessment(
+                    user_id=u.id,
+                    assessment_type="questionnaire",
+                    status="evaluated_iasq",
+                    questionnaire_version="IASQ-1.0 (NIEPID / ISAA Standard)",
+                    questionnaire_responses=json.dumps({
+                        "responses": {
+                            "iasq_1": "yes", "iasq_2": "yes", "iasq_3": "no", "iasq_4": "yes", "iasq_5": "no",
+                            "iasq_6": "no", "iasq_7": "yes", "iasq_8": "no", "iasq_9": "no", "iasq_10": "no"
+                        },
+                        "score_result": {
+                            "total_score": 4,
+                            "screen_status": "Screen Positive (Clinical Threshold Met)",
+                            "risk_tier": "High Risk / Screen Positive"
+                        },
+                        "informant": "Parent / Legal Guardian",
+                        "subject_age": "21.0"
+                    }),
+                    model_version="IASQ-1.0 (Independent Behavioral Scoring)",
+                    model_inference_status="Screen Positive (Clinical Threshold Met)",
+                    predicted_dx_group=1,
+                    prediction_confidence=0.40,
+                    clinical_disclaimer_accepted=True,
+                    notes="Caregiver IASQ behavioral screening demonstration record.",
+                )
+                db.session.add(demo_quest)
     db.session.commit()
 
 

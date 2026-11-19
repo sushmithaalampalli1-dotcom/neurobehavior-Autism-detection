@@ -24,6 +24,13 @@ def get_overview():
     from backend.config import Config
     mri_status = "ACTIVE (2.5D Multi-Channel CNN Trained)" if Config.MODEL_25D_PATH.exists() else "ACTIVE (Baseline 2D CNN)"
 
+    users = User.query.order_by(User.created_at.desc()).limit(100).all()
+    user_list = []
+    for u in users:
+        u_dict = u.to_dict()
+        u_dict["assessment_count"] = Assessment.query.filter_by(user_id=u.id).count()
+        user_list.append(u_dict)
+
     return jsonify({
         "metrics": {
             "total_users": total_users,
@@ -32,12 +39,13 @@ def get_overview():
             "questionnaire_assessments": questionnaire_count,
             "registered_centres": total_centres,
         },
+        "users": user_list,
         "system_status": {
             "mri_model_pipeline": mri_status,
             "iasq_behavioral_engine": "ACTIVE (IASQ-1.0 10-Item Clinical Instrument)",
             "nibabel_preprocessor": "Available" if NIBABEL_AVAILABLE else "Standby",
             "pdf_generator": "Available" if PDFReportService.is_available() else "Standby",
-            "database_engine": "SQLite (Development/Milestone 1)",
+            "database_engine": "SQLite / PostgreSQL via SQLAlchemy",
             "maps_service": "Leaflet + OpenStreetMap Active",
         },
         "abide_configuration": {
@@ -50,3 +58,16 @@ def get_overview():
             "severity_status": "Omitted until clinically evaluated labels exist",
         },
     }), 200
+
+
+@admin_bp.route("/users", methods=["GET"])
+@admin_required
+def list_users():
+    """List all registered user accounts with profile details and assessment activity."""
+    users = User.query.order_by(User.created_at.desc()).limit(200).all()
+    records = []
+    for u in users:
+        d = u.to_dict()
+        d["assessment_count"] = Assessment.query.filter_by(user_id=u.id).count()
+        records.append(d)
+    return jsonify({"count": len(records), "users": records}), 200

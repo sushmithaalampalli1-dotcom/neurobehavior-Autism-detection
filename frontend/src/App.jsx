@@ -107,26 +107,6 @@ export default function App() {
     if (routeId === 'results' || routeId === 'reports') target = 'report';
     if (routeId === 'dashboard') target = 'mri';
 
-    // If directly entering questionnaire without chaining from MRI, ensure activeMriResult is cleared
-    if (target === 'questionnaire' && !options?.keepMri) {
-      setActiveMriResult(null);
-      try {
-        sessionStorage.removeItem('neurobehavior_active_mri');
-      } catch (e) {
-        console.warn(e);
-      }
-    }
-
-    // If directly entering MRI without chaining from questionnaire, ensure activeQuestionnaireResult is cleared
-    if (target === 'mri' && !options?.keepQuestionnaire) {
-      setActiveQuestionnaireResult(null);
-      try {
-        sessionStorage.removeItem('neurobehavior_active_questionnaire');
-      } catch (e) {
-        console.warn(e);
-      }
-    }
-
     setCurrentRoute(target);
     window.location.hash = `#/${target}`;
     window.scrollTo({ top: 0, behavior: 'smooth' });

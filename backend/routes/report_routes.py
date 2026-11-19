@@ -36,6 +36,17 @@ def generate_report():
         "blood_group": getattr(current_user, "blood_group", None) or data.get("blood_group") or "B-",
     }
 
+    # Look up patient's latest assessments for both MRI and Questionnaire modalities
+    patient_mri = Assessment.query.filter(
+        Assessment.user_id == current_user.id,
+        Assessment.assessment_type == "mri"
+    ).order_by(Assessment.created_at.desc()).first()
+
+    patient_quest = Assessment.query.filter(
+        Assessment.user_id == current_user.id,
+        Assessment.assessment_type.in_(["questionnaire", "iasq"])
+    ).order_by(Assessment.created_at.desc()).first()
+
     if assessment_id:
         from backend.extensions import db
         record = db.session.get(Assessment, assessment_id)
@@ -49,81 +60,45 @@ def generate_report():
             }), 403
 
         assessment_data.update(record.to_dict())
-        # Strictly enforce registered user credentials from current_user
-        assessment_data["patient_name"] = current_user.full_name or data.get("patient_name") or "Registered Patient"
-        assessment_data["patient_email"] = current_user.email
-        assessment_data["patient_phone"] = getattr(current_user, "phone_number", None) or data.get("patient_phone")
-        assessment_data["parent_name"] = getattr(current_user, "parent_name", None) or data.get("parent_name")
-        assessment_data["parent_phone"] = getattr(current_user, "parent_phone", None) or data.get("parent_phone")
-        assessment_data["parent_relation"] = getattr(current_user, "parent_relation", None) or data.get("parent_relation")
-        assessment_data["age"] = getattr(current_user, "age", None) or data.get("age") or data.get("patient_age") or 21.0
-        assessment_data["gender"] = getattr(current_user, "gender", None) or data.get("gender") or data.get("patient_gender") or "Female"
-        assessment_data["blood_group"] = getattr(current_user, "blood_group", None) or data.get("blood_group") or "B-"
-        if data.get("image_base64"):
-            assessment_data["image_base64"] = data["image_base64"]
-        if data.get("overlay_base64"):
-            assessment_data["overlay_base64"] = data["overlay_base64"]
-        if data.get("mri_filename"):
-            assessment_data["mri_filename"] = data["mri_filename"]
-        assessment_data["patient_email"] = current_user.email
-        if data.get("image_base64"):
-            assessment_data["image_base64"] = data["image_base64"]
-        if data.get("overlay_base64"):
-            assessment_data["overlay_base64"] = data["overlay_base64"]
-        if data.get("mri_filename"):
-            assessment_data["mri_filename"] = data["mri_filename"]
+    elif not patient_mri and not patient_quest:
+        return jsonify({
+            "error": "No assessment data available to generate a report. Please upload a brain MRI scan or submit an IASQ questionnaire first."
+        }), 400
 
-        # Keep assessment modalities strictly isolated to what was actually performed
-        if record.assessment_type in ["questionnaire", "iasq"]:
-            # Questionnaire-only assessment: Do NOT cross-pollinate with previous MRI scans
-            assessment_data["mri_filename"] = None
-            assessment_data["predicted_dx_group"] = None
-            assessment_data["prediction_confidence"] = None
-            assessment_data["mri_dimensions"] = None
-        elif record.assessment_type == "mri":
-            # MRI-only assessment: Do NOT cross-pollinate with previous questionnaire responses
-            assessment_data["questionnaire_responses"] = None
-            assessment_data["questionnaire_version"] = None
-    else:
-        # Resolve the patient's single latest assessment record
-        latest_assessment = Assessment.query.filter_by(
-            user_id=current_user.id
-        ).order_by(Assessment.created_at.desc()).first()
+    # Ensure MRI findings are present if available
+    if patient_mri:
+        if not assessment_data.get("mri_filename") or assessment_data["mri_filename"] == "Awaiting Scan Upload":
+            assessment_data["mri_filename"] = patient_mri.mri_filename
+        if not assessment_data.get("mri_dimensions") or assessment_data["mri_dimensions"] == "N/A":
+            assessment_data["mri_dimensions"] = patient_mri.mri_dimensions
+        if assessment_data.get("predicted_dx_group") is None:
+            assessment_data["predicted_dx_group"] = patient_mri.predicted_dx_group
+        if assessment_data.get("prediction_confidence") is None:
+            assessment_data["prediction_confidence"] = patient_mri.prediction_confidence
 
-        # Strict validation: If patient has entered nothing, do NOT generate a dummy report
-        if not latest_assessment:
-            return jsonify({
-                "error": "No assessment data available to generate a report. Please upload a brain MRI scan or submit an IASQ questionnaire first."
-            }), 400
+    # Ensure Questionnaire findings are present if available
+    if patient_quest:
+        if not assessment_data.get("questionnaire_responses"):
+            assessment_data["questionnaire_responses"] = patient_quest.questionnaire_responses
+        if not assessment_data.get("questionnaire_version"):
+            assessment_data["questionnaire_version"] = patient_quest.questionnaire_version
 
-        assessment_data.update(latest_assessment.to_dict())
-        assessment_id = latest_assessment.id
-
-        if latest_assessment.assessment_type in ["questionnaire", "iasq"]:
-            assessment_data["mri_filename"] = None
-            assessment_data["predicted_dx_group"] = None
-            assessment_data["prediction_confidence"] = None
-            assessment_data["mri_dimensions"] = None
-        elif latest_assessment.assessment_type == "mri":
-            assessment_data["questionnaire_responses"] = None
-            assessment_data["questionnaire_version"] = None
-
-        assessment_data["id"] = f"NB-ASD-{assessment_id or '001'}"
-        assessment_data["patient_name"] = current_user.full_name or data.get("patient_name") or "Registered Patient"
-        assessment_data["patient_email"] = current_user.email
-        assessment_data["patient_phone"] = getattr(current_user, "phone_number", None) or data.get("patient_phone")
-        assessment_data["parent_name"] = getattr(current_user, "parent_name", None) or data.get("parent_name")
-        assessment_data["parent_phone"] = getattr(current_user, "parent_phone", None) or data.get("parent_phone")
-        assessment_data["parent_relation"] = getattr(current_user, "parent_relation", None) or data.get("parent_relation")
-        assessment_data["age"] = getattr(current_user, "age", None) or data.get("age") or data.get("patient_age") or 21.0
-        assessment_data["gender"] = getattr(current_user, "gender", None) or data.get("gender") or data.get("patient_gender") or "Female"
-        assessment_data["blood_group"] = getattr(current_user, "blood_group", None) or data.get("blood_group") or "B-"
-        if data.get("image_base64"):
-            assessment_data["image_base64"] = data["image_base64"]
-        if data.get("overlay_base64"):
-            assessment_data["overlay_base64"] = data["overlay_base64"]
-        if data.get("mri_filename"):
-            assessment_data["mri_filename"] = data["mri_filename"]
+    # Strictly enforce registered user credentials from current_user
+    assessment_data["patient_name"] = current_user.full_name or data.get("patient_name") or "Registered Patient"
+    assessment_data["patient_email"] = current_user.email
+    assessment_data["patient_phone"] = getattr(current_user, "phone_number", None) or data.get("patient_phone")
+    assessment_data["parent_name"] = getattr(current_user, "parent_name", None) or data.get("parent_name")
+    assessment_data["parent_phone"] = getattr(current_user, "parent_phone", None) or data.get("parent_phone")
+    assessment_data["parent_relation"] = getattr(current_user, "parent_relation", None) or data.get("parent_relation")
+    assessment_data["age"] = getattr(current_user, "age", None) or data.get("age") or data.get("patient_age") or 21.0
+    assessment_data["gender"] = getattr(current_user, "gender", None) or data.get("gender") or data.get("patient_gender") or "Female"
+    assessment_data["blood_group"] = getattr(current_user, "blood_group", None) or data.get("blood_group") or "B-"
+    if data.get("image_base64"):
+        assessment_data["image_base64"] = data["image_base64"]
+    if data.get("overlay_base64"):
+        assessment_data["overlay_base64"] = data["overlay_base64"]
+    if data.get("mri_filename"):
+        assessment_data["mri_filename"] = data["mri_filename"]
 
     output_dir = current_app.config["REPORTS_DIR"]
     report_filename = f"NeuroBehavior_Report_User{current_user.id}_A{assessment_id or '0'}.pdf"

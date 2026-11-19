@@ -832,3 +832,45 @@ textarea:focus::placeholder {
   75% { transform: translateX(4px); }
 }
 
+/* =========================================================================
+   Clinical Report Print Styles (window.print() / Save as PDF)
+   ========================================================================= */
+@media print {
+  /* Hide non-printable navigation, status banners, action buttons, and footers */
+  .navbar,
+  .status-banner,
+  .workflow-nav-btn,
+  .btn,
+  .footer,
+  .alert,
+  button,
+  .grid-4,
+  .stepper-container {
+    display: none !important;
+  }
+
+  body, .app-container, .main-content {
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .clinical-document-canvas {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 10px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Prevent awkward page break cuts inside report sections */
+  table, tr, td, th {
+    page-break-inside: avoid !important;
+  }
+
+  h1, h2, h3, h4 {
+    page-break-after: avoid !important;
+  }
+}
+
+

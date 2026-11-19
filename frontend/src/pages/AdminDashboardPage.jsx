@@ -65,6 +65,90 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
+      {/* Registered User Accounts & Patient Database Table */}
+      <div className="card">
+        <div className="card-header" style={{ marginBottom: '14px' }}>
+          <div>
+            <h3 className="card-title" style={{ fontSize: '1.18rem', margin: 0 }}>
+              👥 Registered User Accounts & Patient Database
+            </h3>
+            <p className="card-subtitle" style={{ margin: '4px 0 0 0' }}>
+              Full list of registered patients, guardians, and administrators stored in the system database
+            </p>
+          </div>
+          <span className="badge badge-primary">
+            {adminData?.users?.length || 0} Registered Users
+          </span>
+        </div>
+
+        <div className="table-wrapper">
+          <table className="data-table" style={{ width: '100%', fontSize: '0.84rem' }}>
+            <thead>
+              <tr style={{ background: '#f8fafc', textAlign: 'left' }}>
+                <th style={{ padding: '8px 12px' }}>ID</th>
+                <th style={{ padding: '8px 12px' }}>Patient Name</th>
+                <th style={{ padding: '8px 12px' }}>Email Address</th>
+                <th style={{ padding: '8px 12px' }}>Role</th>
+                <th style={{ padding: '8px 12px' }}>Age / Gender</th>
+                <th style={{ padding: '8px 12px' }}>Contact Number</th>
+                <th style={{ padding: '8px 12px' }}>Guardian / Caregiver</th>
+                <th style={{ padding: '8px 12px' }}>Assessments</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(!adminData?.users || adminData.users.length === 0) ? (
+                <tr>
+                  <td colSpan="8" style={{ textAlign: 'center', padding: '24px', color: '#64748b' }}>
+                    No registered user accounts found in the database.
+                  </td>
+                </tr>
+              ) : (
+                adminData.users.map((u) => (
+                  <tr key={u.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '8px 12px', fontWeight: 700, color: '#1e3a8a' }}>
+                      #{u.id}
+                    </td>
+                    <td style={{ padding: '8px 12px', fontWeight: 600 }}>
+                      {u.full_name || 'N/A'}
+                    </td>
+                    <td style={{ padding: '8px 12px', color: '#0369a1' }}>
+                      {u.email}
+                    </td>
+                    <td style={{ padding: '8px 12px' }}>
+                      <span className={`badge ${u.role === 'admin' ? 'badge-info' : 'badge-success'}`}>
+                        {u.role || 'patient'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '8px 12px' }}>
+                      {u.age ? `${u.age} yrs` : 'N/A'} / {u.gender || 'N/A'}
+                    </td>
+                    <td style={{ padding: '8px 12px' }}>
+                      {u.phone_number || 'Not Provided'}
+                    </td>
+                    <td style={{ padding: '8px 12px', color: '#475569' }}>
+                      {u.parent_name ? (
+                        <span>
+                          <strong>{u.parent_name}</strong>
+                          {u.parent_relation ? ` (${u.parent_relation})` : ''}
+                          {u.parent_phone ? ` - ${u.parent_phone}` : ''}
+                        </span>
+                      ) : (
+                        'None specified'
+                      )}
+                    </td>
+                    <td style={{ padding: '8px 12px', fontWeight: 700, textAlign: 'center' }}>
+                      <span style={{ background: '#f1f5f9', padding: '2px 8px', borderRadius: '12px' }}>
+                        {u.assessment_count ?? 0}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Subsystems & Services Status */}
       <div className="card">
         <h3 className="card-title" style={{ marginBottom: '16px' }}>Subsystems Operational Verification</h3>

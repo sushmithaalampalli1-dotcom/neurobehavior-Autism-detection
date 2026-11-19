@@ -69,6 +69,18 @@ export default function Navbar({ currentRoute, setCurrentRoute, user, onLogout }
                 </div>
               </div>
 
+              {user.role === 'admin' && (
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  style={{ padding: '6px 12px', fontSize: '0.82rem', borderColor: 'var(--primary)', color: 'var(--primary)', fontWeight: 700 }}
+                  onClick={() => setCurrentRoute('admin')}
+                  title="Open Admin & Database Console"
+                >
+                  ⚙️ Database & Admin
+                </button>
+              )}
+
               <button 
                 className="btn btn-secondary" 
                 style={{ padding: '6px 14px', fontSize: '0.82rem' }} 

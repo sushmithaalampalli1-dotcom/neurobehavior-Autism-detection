@@ -21,7 +21,10 @@ class Config:
 
     # Database
     DATABASE_PATH = BASE_DIR / "neurobehavior_asd.db"
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", f"sqlite:///{DATABASE_PATH.as_posix()}")
+    _raw_db_url = os.getenv("DATABASE_URL")
+    if _raw_db_url and _raw_db_url.startswith("postgres://"):
+        _raw_db_url = _raw_db_url.replace("postgres://", "postgresql://", 1)
+    SQLALCHEMY_DATABASE_URI = _raw_db_url or f"sqlite:///{DATABASE_PATH.as_posix()}"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # CORS
