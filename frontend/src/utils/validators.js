@@ -214,6 +214,52 @@ export function validateAge(ageValue) {
   };
 }
 
+// 4b. Questionnaire Age Validator (strictly suitable for 1 to 18 years only)
+export function validateQuestionnaireAge(ageValue) {
+  if (ageValue === '' || ageValue === null || ageValue === undefined) {
+    return {
+      isValid: false,
+      isOver18: false,
+      isUnder1: false,
+      message: 'Age is required to check behavioral questionnaire eligibility.',
+    };
+  }
+  const ageNum = parseFloat(ageValue);
+  if (isNaN(ageNum)) {
+    return {
+      isValid: false,
+      isOver18: false,
+      isUnder1: false,
+      message: 'Please enter a valid age in years.',
+    };
+  }
+  if (ageNum > 18) {
+    return {
+      isValid: false,
+      isOver18: true,
+      isUnder1: false,
+      ageNum,
+      message: 'The behavioral questionnaire is suitable for 1 to 18 years only. Individuals older than 18 cannot answer this questionnaire.',
+    };
+  }
+  if (ageNum < 1) {
+    return {
+      isValid: false,
+      isOver18: false,
+      isUnder1: true,
+      ageNum,
+      message: 'The behavioral questionnaire is suitable for 1 to 18 years only. Age must be at least 1 year.',
+    };
+  }
+  return {
+    isValid: true,
+    isOver18: false,
+    isUnder1: false,
+    ageNum,
+    message: 'Age is within the validated 1 to 18 years range.',
+  };
+}
+
 // 5. Patient Full Name Validator
 export function validateFullName(name) {
   if (!name || typeof name !== 'string') {

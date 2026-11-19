@@ -78,15 +78,7 @@ export default function Navbar({ currentRoute, setCurrentRoute, user, onLogout }
                 Sign Out
               </button>
             </div>
-          ) : (
-            <button 
-              className="btn btn-primary" 
-              style={{ padding: '8px 20px', fontSize: '0.88rem' }}
-              onClick={() => setCurrentRoute('auth')}
-            >
-              Sign In / Register
-            </button>
-          )}
+          ) : null}
         </div>
       </div>
     </header>

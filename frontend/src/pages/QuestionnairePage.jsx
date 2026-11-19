@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api/client';
-import { validateAge, validateIasqResponses } from '../utils/validators';
+import { validateAge, validateIasqResponses, validateQuestionnaireAge } from '../utils/validators';
 
 export default function QuestionnairePage({ user, navigate, activeQuestionnaireResult, onQuestionnaireCompleted }) {
   const [schema, setSchema] = useState(null);
@@ -12,6 +12,11 @@ export default function QuestionnairePage({ user, navigate, activeQuestionnaireR
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(() => activeQuestionnaireResult || null);
   const [error, setError] = useState('');
+
+  // Age eligibility evaluation: strictly suitable for 1 to 18 years only
+  const qAgeCheck = validateQuestionnaireAge(subjectAge);
+  const isAgeOver18 = qAgeCheck.isOver18;
+  const isAgeUnder1 = qAgeCheck.isUnder1;
 
   useEffect(() => {
     if (activeQuestionnaireResult && !result) {
@@ -26,6 +31,14 @@ export default function QuestionnairePage({ user, navigate, activeQuestionnaireR
   }, []);
 
   const handleAnswerChange = (itemId, value) => {
+    if (isAgeOver18) {
+      setError('The behavioral questionnaire is suitable for 1 to 18 years only. Answering is not permitted.');
+      return;
+    }
+    if (isAgeUnder1) {
+      setError('The behavioral questionnaire is suitable for 1 to 18 years only. Minimum age is 1 year.');
+      return;
+    }
     setAnswers((prev) => ({
       ...prev,
       [itemId]: value,
@@ -54,7 +67,16 @@ export default function QuestionnairePage({ user, navigate, activeQuestionnaireR
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Subject Age validation
+    // Subject Age validation: strictly 1 to 18 years only
+    if (isAgeOver18) {
+      setError('The IASQ Behavioral Questionnaire is suitable for 1 to 18 years only. Individuals older than 18 cannot answer.');
+      return;
+    }
+    if (isAgeUnder1) {
+      setError('The IASQ Behavioral Questionnaire is suitable for 1 to 18 years only. Minimum age is 1 year.');
+      return;
+    }
+
     const ageCheck = validateAge(subjectAge);
     if (!ageCheck.isValid) {
       setError(ageCheck.message);
@@ -231,21 +253,66 @@ export default function QuestionnairePage({ user, navigate, activeQuestionnaireR
             <div className="grid-2" style={{ marginBottom: '22px' }}>
               <div className="form-group">
                 <label className="form-label" htmlFor="ageInput" style={{ fontWeight: 700 }}>
-                  Subject Age (in years or decimals) <span style={{ color: '#dc2626' }}>*</span>
+                  Subject Age (in years) <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <input
                   id="ageInput"
                   type="number"
-                  min="0.1"
-                  max="100"
+                  min="1"
+                  max="18"
                   step="0.1"
-                  className="form-input"
-                  placeholder="e.g. 5.0 (0.1 for infant)"
+                  className={`form-input ${isAgeOver18 || isAgeUnder1 ? 'is-invalid' : ''}`}
+                  placeholder="e.g. 5.0 (Range: 1 to 18 years)"
                   value={subjectAge}
-                  onChange={(e) => setSubjectAge(e.target.value)}
+                  onChange={(e) => {
+                    setSubjectAge(e.target.value);
+                    setError('');
+                  }}
                   required
                 />
-                <span className="form-help">Validated psychometric screening range: 1 to 18 years (infants supported).</span>
+                <span className="form-help" style={{ color: isAgeOver18 ? '#dc2626' : 'var(--slate-500)', fontWeight: isAgeOver18 ? 700 : 400 }}>
+                  Standardized psychometric screening protocol: Suitable for 1 to 18 years only.
+                </span>
+
+                {isAgeOver18 && (
+                  <div style={{
+                    marginTop: '8px',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    background: '#fef2f2',
+                    border: '1.5px solid #ef4444',
+                    color: '#991b1b',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '0.84rem'
+                  }}>
+                    <span style={{ fontSize: '1.25rem' }}>🚫</span>
+                    <div>
+                      <strong>Age ({subjectAge} yrs) exceeds screening limit:</strong> Answering is disabled. The behavioral questionnaire is suitable for 1 to 18 years only.
+                    </div>
+                  </div>
+                )}
+
+                {isAgeUnder1 && subjectAge !== '' && (
+                  <div style={{
+                    marginTop: '8px',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    background: '#fffbeb',
+                    border: '1.5px solid #f59e0b',
+                    color: '#92400e',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '0.84rem'
+                  }}>
+                    <span style={{ fontSize: '1.25rem' }}>⚠️</span>
+                    <div>
+                      <strong>Age ({subjectAge} yrs) below 1 year:</strong> The behavioral questionnaire is suitable for 1 to 18 years only.
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="form-group">
@@ -302,6 +369,28 @@ export default function QuestionnairePage({ user, navigate, activeQuestionnaireR
               </div>
             </div>
 
+            {/* Locked Warning Notice when Age > 18 */}
+            {isAgeOver18 && (
+              <div style={{
+                padding: '22px 24px',
+                borderRadius: 'var(--radius-lg)',
+                background: '#fff5f5',
+                border: '2px dashed #ef4444',
+                textAlign: 'center',
+                color: '#991b1b',
+                marginBottom: '24px',
+              }}>
+                <div style={{ fontSize: '2rem', marginBottom: '6px' }}>🔒</div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: '0 0 6px 0', color: '#991b1b' }}>
+                  Behavioral Questions Locked (Subject Age: {subjectAge} Years)
+                </h3>
+                <p style={{ margin: '0 auto', fontSize: '0.9rem', color: '#7f1d1d', lineHeight: 1.5, maxWidth: '620px' }}>
+                  The Indian Autism Screening Questionnaire (IASQ) is validated and suitable for <strong>1 to 18 years only</strong>.
+                  Answering is restricted for subjects older than 18 years.
+                </p>
+              </div>
+            )}
+
             {/* 10 IASQ Questions */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '28px' }}>
               {(schema?.items || []).map((item) => {
@@ -355,33 +444,41 @@ export default function QuestionnairePage({ user, navigate, activeQuestionnaireR
                         </p>
                       </div>
 
-                      {/* Yes / No Clickable Tiles */}
+                      {/* Yes / No Clickable Tiles (Disabled if Age > 18 or < 1) */}
                       <div style={{ display: 'flex', gap: '8px', minWidth: '160px', justifyContent: 'flex-end' }}>
                         <button
                           type="button"
+                          disabled={isAgeOver18 || isAgeUnder1}
                           className={`btn ${currentVal === true ? 'btn-primary' : 'btn-secondary'}`}
                           style={{
                             padding: '8px 18px',
                             fontSize: '0.86rem',
                             fontWeight: 600,
                             background: currentVal === true ? '#dc2626' : undefined,
-                            borderColor: currentVal === true ? '#dc2626' : undefined
+                            borderColor: currentVal === true ? '#dc2626' : undefined,
+                            opacity: (isAgeOver18 || isAgeUnder1) ? 0.4 : 1,
+                            cursor: (isAgeOver18 || isAgeUnder1) ? 'not-allowed' : 'pointer',
                           }}
-                          onClick={() => handleAnswerChange(item.id, true)}
+                          onClick={() => !isAgeOver18 && !isAgeUnder1 && handleAnswerChange(item.id, true)}
+                          title={isAgeOver18 ? 'Suitable for 1 to 18 years only' : ''}
                         >
                           Yes (ಹೌದು) (1)
                         </button>
                         <button
                           type="button"
+                          disabled={isAgeOver18 || isAgeUnder1}
                           className={`btn ${currentVal === false ? 'btn-primary' : 'btn-secondary'}`}
                           style={{
                             padding: '8px 18px',
                             fontSize: '0.86rem',
                             fontWeight: 600,
                             background: currentVal === false ? '#16a34a' : undefined,
-                            borderColor: currentVal === false ? '#16a34a' : undefined
+                            borderColor: currentVal === false ? '#16a34a' : undefined,
+                            opacity: (isAgeOver18 || isAgeUnder1) ? 0.4 : 1,
+                            cursor: (isAgeOver18 || isAgeUnder1) ? 'not-allowed' : 'pointer',
                           }}
-                          onClick={() => handleAnswerChange(item.id, false)}
+                          onClick={() => !isAgeOver18 && !isAgeUnder1 && handleAnswerChange(item.id, false)}
+                          title={isAgeOver18 ? 'Suitable for 1 to 18 years only' : ''}
                         >
                           No (ಇಲ್ಲ) (0)
                         </button>
@@ -396,12 +493,23 @@ export default function QuestionnairePage({ user, navigate, activeQuestionnaireR
               <button
                 type="submit"
                 className="btn btn-primary"
-                disabled={submitting}
-                style={{ padding: '12px 28px', fontSize: '0.96rem' }}
+                disabled={isAgeOver18 || isAgeUnder1 || submitting}
+                style={{
+                  padding: '12px 28px',
+                  fontSize: '0.96rem',
+                  opacity: (isAgeOver18 || isAgeUnder1) ? 0.45 : 1,
+                  cursor: (isAgeOver18 || isAgeUnder1) ? 'not-allowed' : 'pointer',
+                }}
               >
-                {submitting ? 'Scoring Assessment...' : 'Submit & Score Assessment ➔'}
+                {isAgeOver18
+                  ? '🚫 Questionnaire Locked (Suitable for 1 to 18 Years Only)'
+                  : isAgeUnder1
+                    ? '⚠️ Age < 1 (Suitable for 1 to 18 Years Only)'
+                    : submitting
+                      ? 'Scoring Assessment...'
+                      : 'Submit & Score Assessment ➔'}
               </button>
-              {answeredCount < totalCount && (
+              {answeredCount < totalCount && !isAgeOver18 && !isAgeUnder1 && (
                 <span style={{ fontSize: '0.84rem', color: 'var(--slate-500)' }}>
                   Please answer all {totalCount} items before submitting ({totalCount - answeredCount} remaining).
                 </span>

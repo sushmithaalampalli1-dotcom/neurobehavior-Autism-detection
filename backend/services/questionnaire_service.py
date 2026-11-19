@@ -206,15 +206,18 @@ class QuestionnaireService:
         age_str = str(data.get("subject_age", "")).strip()
         notes = data.get("clinical_concerns", "")
 
-        # Age eligibility verification (3 to 18 years)
+        # Age eligibility verification: strictly suitable for 1 to 18 years only
         age_warning = None
         try:
             age_val = float(age_str)
-            if age_val < 3 or age_val > 18:
-                age_warning = f"Note: IASQ is standardized for children aged 3 to 18 years. Subject age is {age_val}."
+            if age_val > 18:
+                raise ValueError("The IASQ Behavioral Questionnaire is suitable for 1 to 18 years only. Individuals older than 18 cannot answer this questionnaire.")
+            if age_val < 1:
+                raise ValueError("The IASQ Behavioral Questionnaire is suitable for 1 to 18 years only. Subject age must be at least 1 year.")
         except (ValueError, TypeError):
             if not age_str:
                 raise ValueError("Subject age is required for IASQ administration.")
+            raise
 
         # Score the IASQ
         score_result = cls.score_iasq(raw_responses)
@@ -223,8 +226,6 @@ class QuestionnaireService:
             f"IASQ Score: {score_result['total_score']}/10 ({score_result['screen_status']}) | "
             f"Informant: {informant} | Age: {age_str}."
         )
-        if age_warning:
-            stored_notes += f" {age_warning}"
         if notes:
             stored_notes += f" Concerns: {notes}"
 

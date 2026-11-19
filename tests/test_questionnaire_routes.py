@@ -79,3 +79,19 @@ def test_questionnaire_submit_iasq_screen_negative(client, test_patient):
     assert data["success"] is True
     assert data["score"] == 0
     assert "Screen Negative" in data["screen_status"]
+
+
+def test_questionnaire_submit_age_over_18_rejected(client, test_patient):
+    """Verify that subject age > 18 is strictly rejected with 400 specifying 1 to 18 years only."""
+    responses = {f"iasq_{i}": False for i in range(1, 11)}
+
+    payload = {
+        "subject_age": "21",
+        "informant_relationship": "Self",
+        "responses": responses,
+    }
+
+    response = client.post("/api/questionnaire/submit", json=payload, headers=test_patient["header"])
+    assert response.status_code == 400
+    data = response.get_json()
+    assert "suitable for 1 to 18 years only" in data["error"]
