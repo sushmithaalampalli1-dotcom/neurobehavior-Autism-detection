@@ -222,7 +222,6 @@ export const api = {
       if (params.lng != null) q.append('lng', params.lng);
       if (params.radius_km != null) q.append('radius_km', params.radius_km);
       if (params.sort_by != null) q.append('sort_by', params.sort_by);
-      if (params.min_rating != null) q.append('min_rating', params.min_rating);
       const str = q.toString();
       if (str) query = `?${str}`;
     }

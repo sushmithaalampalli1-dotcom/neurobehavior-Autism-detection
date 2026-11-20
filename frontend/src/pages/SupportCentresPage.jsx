@@ -64,37 +64,6 @@ const PROXIMITY_OPTIONS = [
   { id: '500', label: 'Within 500 km (Inter-State)', km: 500 },
 ];
 
-// Fallback verified clinical ratings mapping
-const DEFAULT_RATINGS = {
-  'NIMHANS Center for Autism Research and Services': { rating: 4.9, reviews: 1840 },
-  'Manipal Hospital Child Development & Neuro Center': { rating: 4.8, reviews: 860 },
-  'Aster CMI Child Neurodevelopment Clinic': { rating: 4.7, reviews: 650 },
-  'All India Institute of Speech and Hearing (AIISH)': { rating: 4.9, reviews: 1240 },
-  'Kovai Medical Center Child Development & Autism Unit': { rating: 4.7, reviews: 520 },
-  "Apollo Children's Hospital Developmental Clinic": { rating: 4.8, reviews: 910 },
-  'VHS Child Development & Autism Clinic': { rating: 4.7, reviews: 580 },
-  'Aster Medcity Child Neurodevelopmental Center': { rating: 4.8, reviews: 730 },
-  'CDC - Child Development Centre, Medical College': { rating: 4.8, reviews: 690 },
-  "Rainbow Children's Hospital & BirthRight": { rating: 4.8, reviews: 990 },
-  'Niloufer Hospital Child Guidance Clinic': { rating: 4.7, reviews: 820 },
-  'Action For Autism (AFA) - The National Centre for Autism': { rating: 4.9, reviews: 1450 },
-  'AIIMS Pediatric Neurology & Child Guidance Center': { rating: 4.9, reviews: 2450 },
-  'Medanta Child Development Center': { rating: 4.8, reviews: 1350 },
-  'PRAYAS - Center for Special Children & Autism Clinic': { rating: 4.7, reviews: 480 },
-  'PGIMER Child & Adolescent Psychiatry Unit': { rating: 4.9, reviews: 1980 },
-  'Fortis Escorts Pediatric Neurodevelopment Clinic': { rating: 4.7, reviews: 610 },
-  'SGPGI Pediatric Neurology & Development Center': { rating: 4.8, reviews: 1120 },
-  'Ummeed Child Development Center': { rating: 4.9, reviews: 1650 },
-  'Kokilaben Dhirubhai Ambani Hospital Center for Child Development': { rating: 4.8, reviews: 1420 },
-  'KEM Hospital Child Development & Autism Unit': { rating: 4.8, reviews: 980 },
-  'Apollo Hospitals Child Health Center': { rating: 4.7, reviews: 490 },
-  'Sunshine Global Hospital Pediatric Center': { rating: 4.7, reviews: 460 },
-  'Apollo Hospitals Child Neurodevelopment Center': { rating: 4.8, reviews: 870 },
-  'Institute of Child Health Autism & Neurodevelopment Clinic': { rating: 4.8, reviews: 870 },
-  "AMRI Children's Hospital Developmental Care Unit": { rating: 4.7, reviews: 640 },
-  'AIIMS Bhubaneswar Child Health & Development Center': { rating: 4.9, reviews: 1560 },
-};
-
 // 100% verified canonical official hospital website addresses
 const OFFICIAL_WEBSITES = {
   'NIMHANS Center for Autism Research and Services': 'https://nimhans.ac.in',
@@ -125,13 +94,6 @@ const OFFICIAL_WEBSITES = {
   "AMRI Children's Hospital Developmental Care Unit": 'https://www.manipalhospitals.com/mukundapur/',
   'AIIMS Bhubaneswar Child Health & Development Center': 'https://aiimsbhubaneswar.nic.in',
 };
-
-function resolveCentreRating(c) {
-  const fallback = DEFAULT_RATINGS[c.name] || { rating: 4.8, reviews: 500 };
-  const rating = typeof c.rating === 'number' && c.rating > 0 ? c.rating : fallback.rating;
-  const review_count = typeof c.review_count === 'number' && c.review_count > 0 ? c.review_count : fallback.reviews;
-  return { rating, review_count };
-}
 
 // Guaranteed valid official website URL for any center
 function getHospitalWebsite(centre) {
@@ -168,8 +130,7 @@ export default function SupportCentresPage({ navigate }) {
   const [userLocation, setUserLocation] = useState({ latitude: 12.9716, longitude: 77.5946 });
   const [selectedCityName, setSelectedCityName] = useState('Predicting patient location...');
   const [radiusFilter, setRadiusFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('rating'); // 'rating' | 'distance' | 'reviews'
-  const [minRatingFilter, setMinRatingFilter] = useState('all'); // 'all' | '4.8' | '4.9'
+  const [sortBy, setSortBy] = useState('distance'); // 'distance' | 'name' | 'city'
   const [locating, setLocating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -251,7 +212,7 @@ export default function SupportCentresPage({ navigate }) {
             setUserLocation(coords);
             const resolvedCity = [ipData.city, ipData.region, ipData.postal, ipData.country_name].filter(Boolean).join(', ');
             setSelectedCityName(resolvedCity || `${ipData.city || 'Detected Region'}`);
-            setLocationNotice(`📍 Patient location accurately predicted: ${resolvedCity}. Showing hospitals sorted by rating & proximity.`);
+            setLocationNotice(`📍 Patient location accurately predicted: ${resolvedCity}. Showing hospitals sorted by proximity & distance.`);
             setLocating(false);
             return true;
           }
@@ -269,7 +230,7 @@ export default function SupportCentresPage({ navigate }) {
             setUserLocation(coords);
             const resolvedCity = [ipData2.city, ipData2.region, ipData2.postal, ipData2.country].filter(Boolean).join(', ');
             setSelectedCityName(resolvedCity || `${ipData2.city || 'Detected Region'}`);
-            setLocationNotice(`📍 Patient location accurately predicted: ${resolvedCity}. Showing hospitals sorted by rating & proximity.`);
+            setLocationNotice(`📍 Patient location accurately predicted: ${resolvedCity}. Showing hospitals sorted by proximity & distance.`);
             setLocating(false);
             return true;
           }
@@ -322,41 +283,9 @@ export default function SupportCentresPage({ navigate }) {
     predictPatientLocation(false);
   }, []);
 
-  // Compute Top-Rated Hospital Suggestions (Top 4 national apex / quaternary centers)
-  const topRatedSuggestions = useMemo(() => {
-    if (!allCentres || allCentres.length === 0) return [];
-
-    const enriched = allCentres.map((c) => {
-      const { rating, review_count } = resolveCentreRating(c);
-      let dist = undefined;
-      let drive = null;
-      if (userLocation && c.latitude && c.longitude) {
-        dist = calculateDistanceKm(userLocation.latitude, userLocation.longitude, c.latitude, c.longitude);
-        drive = getDrivingEstimate(dist);
-      }
-      return {
-        ...c,
-        rating,
-        review_count,
-        distance_km: dist,
-        driving_km: drive?.drivingKm,
-        drive_time: drive?.timeStr,
-      };
-    });
-
-    // Sort by rating descending, then review count descending
-    enriched.sort((a, b) => {
-      if (b.rating !== a.rating) return b.rating - a.rating;
-      return (b.review_count || 0) - (a.review_count || 0);
-    });
-
-    return enriched.slice(0, 4);
-  }, [allCentres, userLocation]);
-
-  // Compute annotated centres with distance, drive estimate, ratings, and applied filters/sorts
+  // Compute annotated centres with distance, drive estimate, and applied proximity/city filters
   const annotatedCentres = useMemo(() => {
     let list = allCentres.map((c) => {
-      const { rating, review_count } = resolveCentreRating(c);
       if (userLocation && c.latitude && c.longitude) {
         const straightDist = calculateDistanceKm(
           userLocation.latitude,
@@ -367,21 +296,13 @@ export default function SupportCentresPage({ navigate }) {
         const drive = getDrivingEstimate(straightDist);
         return {
           ...c,
-          rating,
-          review_count,
           distance_km: straightDist,
           driving_km: drive.drivingKm,
           drive_time: drive.timeStr,
         };
       }
-      return { ...c, rating, review_count, distance_km: undefined, driving_km: undefined, drive_time: undefined };
+      return { ...c, distance_km: undefined, driving_km: undefined, drive_time: undefined };
     });
-
-    // Apply minimum rating filter
-    if (minRatingFilter !== 'all') {
-      const minR = parseFloat(minRatingFilter);
-      list = list.filter((c) => (c.rating || 0) >= minR);
-    }
 
     // Apply city text search if specified
     if (cityFilter.trim()) {
@@ -401,30 +322,26 @@ export default function SupportCentresPage({ navigate }) {
       list = list.filter((c) => c.distance_km !== undefined && c.distance_km <= maxKm);
     }
 
-    // Sorting: 'rating' (top rated first), 'distance' (nearest first), 'reviews' (most reviewed)
-    if (sortBy === 'rating') {
+    // Sorting: 'distance' (nearest first), 'name' (alphabetical), 'city' (by city)
+    if (sortBy === 'name') {
+      list.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortBy === 'city') {
       list.sort((a, b) => {
-        if (b.rating !== a.rating) return b.rating - a.rating;
-        if (b.review_count !== a.review_count) return (b.review_count || 0) - (a.review_count || 0);
+        const cDiff = a.city.localeCompare(b.city);
+        if (cDiff !== 0) return cDiff;
         return (a.distance_km || 99999) - (b.distance_km || 99999);
       });
-    } else if (sortBy === 'reviews') {
-      list.sort((a, b) => {
-        if (b.review_count !== a.review_count) return (b.review_count || 0) - (a.review_count || 0);
-        return b.rating - a.rating;
-      });
-    } else if (sortBy === 'distance' && userLocation) {
+    } else {
+      // Default: Nearest Distance First
       list.sort((a, b) => {
         const dDiff = (a.distance_km || 99999) - (b.distance_km || 99999);
         if (dDiff !== 0) return dDiff;
-        return b.rating - a.rating;
+        return a.name.localeCompare(b.name);
       });
-    } else {
-      list.sort((a, b) => b.rating - a.rating);
     }
 
     return list;
-  }, [allCentres, userLocation, cityFilter, radiusFilter, sortBy, minRatingFilter]);
+  }, [allCentres, userLocation, cityFilter, radiusFilter, sortBy]);
 
   // Proximity count buckets
   const counts = useMemo(() => {
@@ -710,10 +627,8 @@ export default function SupportCentresPage({ navigate }) {
           : '';
 
         const ratingBadge = `
-          <div style="display: flex; align-items: center; gap: 4px; margin-top: 4px; color: #b45309; font-weight: 800; font-size: 12px;">
-            <span>⭐</span> <span>${centre.rating}</span>
-            <span style="color: #64748b; font-weight: 500; font-size: 11px;">(${(centre.review_count || 500).toLocaleString()} reviews)</span>
-            <span style="background: #ecfdf5; color: #047857; padding: 1px 6px; border-radius: 4px; font-size: 10px; border: 1px solid #a7f3d0; margin-left: 4px;">NABH Verified</span>
+          <div style="display: flex; align-items: center; gap: 4px; margin-top: 4px; color: #047857; font-weight: 700; font-size: 11px;">
+            <span style="background: #ecfdf5; color: #047857; padding: 1px 6px; border-radius: 4px; border: 1px solid #a7f3d0;">NABH / Accredited Center</span>
           </div>
         `;
 
@@ -725,8 +640,8 @@ export default function SupportCentresPage({ navigate }) {
         ` : '';
 
         const tooltipText = userLocation && straightDist !== undefined
-          ? `🏥 <b>${centre.name}</b> ⭐ <b>${centre.rating}</b><br/>📍 <b>${straightDist} km</b> from Patient (${selectedCityName || 'Active Location'})<br/>🚗 ~<b>${drivingKm} km</b> (${driveTime})`
-          : `🏥 <b>${centre.name}</b> ⭐ <b>${centre.rating}</b> (${centre.city})`;
+          ? `🏥 <b>${centre.name}</b><br/>📍 <b>${straightDist} km</b> from Patient (${selectedCityName || 'Active Location'})<br/>🚗 ~<b>${drivingKm} km</b> (${driveTime})`
+          : `🏥 <b>${centre.name}</b> (${centre.city})`;
 
         const marker = L.marker([centre.latitude, centre.longitude])
           .addTo(map)
@@ -779,12 +694,12 @@ export default function SupportCentresPage({ navigate }) {
       <div className="card">
         <div className="card-header">
           <div>
-            <h2 className="card-title">High-Accuracy Location Based Personalized Support</h2>
+            <h2 className="card-title">Geospatial Hospital & Autism Intervention Center Referral</h2>
             <p className="card-subtitle">
-              Accredited pediatric hospitals, neurology clinics, and autism diagnostic centers ranked by clinical ratings with 1-click official websites and live location maps
+              Accredited pediatric hospitals, neurology clinics, and autism diagnostic centers routed by proximity with 1-click official websites and live location maps
             </p>
           </div>
-          <span className="badge badge-success">High-Precision GPS & Rating Engine</span>
+          <span className="badge badge-success">Verified Clinical Center Directory</span>
         </div>
 
         {/* Patient Location Search & Geocoding Bar */}
@@ -886,166 +801,7 @@ export default function SupportCentresPage({ navigate }) {
         )}
       </div>
 
-      {/* TOP-RATED HOSPITAL SUGGESTIONS SHOWCASE */}
-      <div
-        className="card"
-        style={{
-          background: 'linear-gradient(135deg, #ffffff 0%, #fffbeb 100%)',
-          border: '1.5px solid #fde68a',
-          padding: '20px 24px',
-          borderRadius: 'var(--radius-lg)',
-          boxShadow: '0 4px 18px rgba(245, 158, 11, 0.08)',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '1.4rem' }}>⭐</span>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#92400e', margin: 0 }}>
-                Top-Rated Hospital Suggestions
-              </h3>
-              <span className="badge" style={{ background: '#fef3c7', color: '#b45309', border: '1px solid #fcd34d', fontWeight: 700, fontSize: '0.74rem' }}>
-                Highest Clinical Quality
-              </span>
-            </div>
-            <p style={{ color: '#78350f', fontSize: '0.84rem', margin: '4px 0 0 0' }}>
-              Premier apex pediatric neurological centers and national institutes recommended based on verified patient ratings (⭐ 4.8 – 4.9)
-            </p>
-          </div>
-          <span style={{ fontSize: '0.8rem', color: '#92400e', fontWeight: 700, background: '#ffffff', padding: '4px 12px', borderRadius: '999px', border: '1px solid #fde68a' }}>
-            Showing Top {topRatedSuggestions.length} Accredited Suggestions
-          </span>
-        </div>
-
-        {/* Suggestion Cards Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
-          {topRatedSuggestions.map((centre) => {
-            const isSelected = selectedCentre?.id === centre.id;
-            const websiteUrl = getHospitalWebsite(centre);
-            const locationMapUrl = getGoogleMapsLocationUrl(centre);
-            const directionsUrl = getGoogleMapsDirectionsUrl(centre, userLocation);
-
-            return (
-              <div
-                key={centre.id}
-                onClick={() => focusCentre(centre, true)}
-                style={{
-                  background: '#ffffff',
-                  border: isSelected ? '2px solid #0284c7' : '1px solid #fde68a',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '16px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  gap: '10px',
-                  cursor: 'pointer',
-                  boxShadow: isSelected ? '0 4px 18px rgba(2, 132, 199, 0.25)' : '0 2px 8px rgba(245, 158, 11, 0.08)',
-                  transition: 'all 0.18s ease',
-                }}
-              >
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <span style={{ color: '#f59e0b', fontSize: '1.15rem' }}>★</span>
-                      <strong style={{ color: '#b45309', fontSize: '1.02rem' }}>{centre.rating}</strong>
-                      <span style={{ color: '#64748b', fontSize: '0.74rem' }}>
-                        ({(centre.review_count || 500).toLocaleString()} reviews)
-                      </span>
-                    </div>
-                    <span className="badge" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', fontSize: '0.68rem', fontWeight: 700 }}>
-                      NABH / JCI
-                    </span>
-                  </div>
-
-                  {/* Hospital Title (Clickable link to official website) */}
-                  <a
-                    href={websiteUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ textDecoration: 'none', color: 'inherit' }}
-                    onClick={(e) => e.stopPropagation()}
-                    title="Open official hospital website in new tab"
-                  >
-                    <h4 style={{ fontSize: '0.96rem', fontWeight: 700, color: 'var(--navy)', margin: '0 0 4px 0', lineHeight: 1.35, display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <span>{centre.name}</span>
-                      <span style={{ fontSize: '0.74rem', color: '#0284c7' }}>🌐↗</span>
-                    </h4>
-                  </a>
-
-                  {/* Address (Clickable link to Location Map) */}
-                  <div
-                    style={{ fontSize: '0.78rem', color: 'var(--slate-600)', margin: '0 0 6px 0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      window.open(locationMapUrl, '_blank', 'noopener,noreferrer');
-                    }}
-                    title="Open hospital location on Google Maps"
-                  >
-                    <span>📍</span>
-                    <span style={{ color: '#0369a1', textDecoration: 'underline' }}>{centre.city}, {centre.state}</span>
-                    <span style={{ color: 'var(--slate-500)' }}>&bull; {centre.facility_type}</span>
-                    <span style={{ fontSize: '0.72rem', color: '#0284c7' }}>↗</span>
-                  </div>
-
-                  {centre.distance_km !== undefined && (
-                    <a
-                      href={directionsUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ textDecoration: 'none', display: 'block' }}
-                      onClick={(e) => e.stopPropagation()}
-                      title="Open turn-by-turn driving route in Google Maps"
-                    >
-                      <div style={{ padding: '6px 10px', background: '#f8fafc', borderRadius: '4px', border: '1px solid #e2e8f0', fontSize: '0.78rem', color: '#0369a1', fontWeight: 600, marginBottom: '8px', cursor: 'pointer' }}>
-                        📍 <strong>{centre.distance_km} km</strong> away &bull; 🚗 <strong>{centre.drive_time}</strong> drive <span style={{ fontSize: '0.74rem' }}>↗</span>
-                      </div>
-                    </a>
-                  )}
-                </div>
-
-                {/* 1-Click Action Buttons: Official Website, Location Map, Interactive Map */}
-                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '6px', flexWrap: 'wrap' }}>
-                  <a
-                    href={websiteUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-primary"
-                    style={{ fontSize: '0.74rem', padding: '6px 11px', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                    onClick={(e) => e.stopPropagation()}
-                    title="Open official hospital website in new tab"
-                  >
-                    🌐 Official Website ↗
-                  </a>
-
-                  <a
-                    href={locationMapUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-outline"
-                    style={{ fontSize: '0.74rem', padding: '6px 9px', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#f8fafc' }}
-                    onClick={(e) => e.stopPropagation()}
-                    title="Open location on Google Maps"
-                  >
-                    📍 Location Map ↗
-                  </a>
-
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    style={{ fontSize: '0.74rem', padding: '6px 9px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                    onClick={(e) => { e.stopPropagation(); focusCentre(centre, true); }}
-                    title="View on interactive Leaflet map"
-                  >
-                    🎯 In-Page Map
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Directory Controls: Proximity Bands, Sorting, Ratings, & Hospital Search */}
+      {/* Directory Controls: Proximity Bands, Sorting, & Hospital Search */}
       <div className="card" style={{ padding: '16px 20px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {/* Proximity Bands */}
@@ -1100,65 +856,10 @@ export default function SupportCentresPage({ navigate }) {
                   className="form-input"
                   style={{ padding: '6px 10px', fontSize: '0.82rem', width: 'auto', fontWeight: 600, cursor: 'pointer' }}
                 >
-                  <option value="rating">⭐ Highest Rated First (5.0 ➔ 4.0)</option>
-                  <option value="distance">📍 Nearest Distance First (km)</option>
-                  <option value="reviews">🏆 Most Reviewed First</option>
+                  <option value="distance">📍 Nearest Distance First (Default)</option>
+                  <option value="name">🔤 Hospital Name (A ➔ Z)</option>
+                  <option value="city">🏙️ By City / Region</option>
                 </select>
-              </div>
-
-              {/* Minimum Rating Filter */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--navy)' }}>Rating Filter:</span>
-                <div style={{ display: 'flex', gap: '4px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setMinRatingFilter('all')}
-                    style={{
-                      background: minRatingFilter === 'all' ? '#b45309' : '#ffffff',
-                      color: minRatingFilter === 'all' ? '#ffffff' : '#b45309',
-                      border: '1px solid #d97706',
-                      borderRadius: '4px',
-                      padding: '4px 8px',
-                      fontSize: '0.78rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    All Ratings
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMinRatingFilter('4.8')}
-                    style={{
-                      background: minRatingFilter === '4.8' ? '#b45309' : '#ffffff',
-                      color: minRatingFilter === '4.8' ? '#ffffff' : '#b45309',
-                      border: '1px solid #d97706',
-                      borderRadius: '4px',
-                      padding: '4px 8px',
-                      fontSize: '0.78rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    ⭐ 4.8+ Stars
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMinRatingFilter('4.9')}
-                    style={{
-                      background: minRatingFilter === '4.9' ? '#b45309' : '#ffffff',
-                      color: minRatingFilter === '4.9' ? '#ffffff' : '#b45309',
-                      border: '1px solid #d97706',
-                      borderRadius: '4px',
-                      padding: '4px 8px',
-                      fontSize: '0.78rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    ⭐ 4.9 Apex
-                  </button>
-                </div>
               </div>
             </div>
 
@@ -1276,15 +977,15 @@ export default function SupportCentresPage({ navigate }) {
                 No hospitals match the selected filter criteria.
               </p>
               <p style={{ color: 'var(--slate-500)', fontSize: '0.84rem', marginTop: '6px' }}>
-                Try relaxing the minimum rating filter or selecting a wider proximity band.
+                Try selecting a wider proximity radius or clearing the city search.
               </p>
               <button
                 type="button"
                 className="btn btn-secondary"
                 style={{ marginTop: '14px' }}
-                onClick={() => { setRadiusFilter('all'); setCityFilter(''); setMinRatingFilter('all'); }}
+                onClick={() => { setRadiusFilter('all'); setCityFilter(''); }}
               >
-                Reset All Filters ({counts.total} Hospitals)
+                Reset Filters ({counts.total} Hospitals)
               </button>
             </div>
           ) : (
@@ -1328,28 +1029,13 @@ export default function SupportCentresPage({ navigate }) {
                         </h4>
                       </a>
 
-                      {/* Rating Stars Badge */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                        <div style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          background: '#fffbeb',
-                          border: '1px solid #fde68a',
-                          padding: '2px 8px',
-                          borderRadius: '999px',
-                          fontSize: '0.8rem',
-                          fontWeight: 800,
-                          color: '#b45309',
-                        }}>
-                          <span>★</span>
-                          <span>{centre.rating}</span>
-                          <span style={{ color: '#78350f', fontWeight: 500, fontSize: '0.72rem' }}>
-                            ({(centre.review_count || 500).toLocaleString()} reviews)
-                          </span>
-                        </div>
-                        <span className="badge" style={{ background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', fontSize: '0.7rem', fontWeight: 700 }}>
+                      {/* Clinical Accreditation & Facility Type Badge */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: '3px' }}>
+                        <span className="badge" style={{ background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', fontSize: '0.72rem', fontWeight: 700 }}>
                           NABH / JCI Accredited
+                        </span>
+                        <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600 }}>
+                          &bull; {centre.facility_type}
                         </span>
                       </div>
                     </div>

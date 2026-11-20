@@ -3,7 +3,7 @@ import pytest
 
 
 def test_centres_list(client):
-    """Verify that /api/centres returns list of autism centers with clinical ratings."""
+    """Verify that /api/centres returns list of accredited autism centers."""
     response = client.get("/api/centres")
     assert response.status_code == 200
     data = response.get_json()
@@ -12,40 +12,36 @@ def test_centres_list(client):
     first_centre = data["centres"][0]
     assert "latitude" in first_centre
     assert "longitude" in first_centre
-    assert "rating" in first_centre
-    assert first_centre["rating"] >= 4.0
-    assert "review_count" in first_centre
-    assert first_centre["review_count"] >= 100
+    assert "facility_type" in first_centre
+    assert "city" in first_centre
 
 
-def test_centres_top_rated_suggestions(client):
-    """Verify that /api/centres/top-rated returns top-rated suggestions."""
-    response = client.get("/api/centres/top-rated?limit=4")
+def test_centres_recommended_suggestions(client):
+    """Verify that /api/centres/recommended returns accredited suggestions."""
+    response = client.get("/api/centres/recommended?limit=4")
     assert response.status_code == 200
     data = response.get_json()
     assert "suggestions" in data
     assert len(data["suggestions"]) == 4
-    for item in data["suggestions"]:
-        assert item["rating"] >= 4.8
 
 
-def test_centres_sorting_by_rating(client):
-    """Verify that /api/centres?sort_by=rating returns descending ratings."""
-    response = client.get("/api/centres?sort_by=rating")
+def test_centres_sorting_by_name(client):
+    """Verify that /api/centres?sort_by=name returns alphabetical sorting."""
+    response = client.get("/api/centres?sort_by=name")
     assert response.status_code == 200
     data = response.get_json()
     centres = data["centres"]
-    ratings = [c["rating"] for c in centres]
-    assert ratings == sorted(ratings, reverse=True)
+    names = [c["name"] for c in centres]
+    assert names == sorted(names)
 
 
-def test_centres_min_rating_filter(client):
-    """Verify that min_rating filter only returns centres with rating >= threshold."""
-    response = client.get("/api/centres?min_rating=4.9")
+def test_centres_distance_filtering(client):
+    """Verify that distance radius filtering functions with latitude & longitude."""
+    response = client.get("/api/centres?lat=12.9716&lng=77.5946&radius_km=50")
     assert response.status_code == 200
     data = response.get_json()
     for c in data["centres"]:
-        assert c["rating"] >= 4.9
+        assert c["distance_km"] <= 50.0
 
 
 def test_admin_overview_unauthorized(client):

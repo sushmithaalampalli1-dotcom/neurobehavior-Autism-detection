@@ -497,9 +497,8 @@ class SupportCentreService:
         lng: Optional[float] = None,
         max_distance_km: Optional[float] = None,
         sort_by: Optional[str] = None,
-        min_rating: Optional[float] = None
     ) -> List[Dict[str, Any]]:
-        """Retrieve centers, optionally filtered by city, rating, or geographic radius in km."""
+        """Retrieve centers, optionally filtered by city or geographic radius in km."""
         cls.seed_initial_centres()
         query = SupportCentre.query
         if city:
@@ -514,25 +513,18 @@ class SupportCentreService:
                 c_dict["distance_km"] = dist
             results.append(c_dict)
 
-        # Minimum rating threshold
-        if min_rating is not None and min_rating > 0:
-            results = [r for r in results if (r.get("rating") or 0.0) >= min_rating]
-
         # Radius filter
         if lat is not None and lng is not None and max_distance_km is not None and max_distance_km > 0:
             results = [r for r in results if r.get("distance_km", float("inf")) <= max_distance_km]
 
-        # Sorting: 'rating' (top rated first), 'reviews' (most reviewed), 'distance' (nearest first)
-        if sort_by == "rating":
-            results.sort(key=lambda x: (-(x.get("rating") or 0.0), -(x.get("review_count") or 0), x.get("distance_km", float("inf"))))
-        elif sort_by == "reviews":
-            results.sort(key=lambda x: (-(x.get("review_count") or 0), -(x.get("rating") or 0.0), x.get("distance_km", float("inf"))))
-        elif sort_by == "distance" and lat is not None and lng is not None:
-            results.sort(key=lambda x: (x.get("distance_km", float("inf")), -(x.get("rating") or 0.0)))
-        elif lat is not None and lng is not None:
-            results.sort(key=lambda x: (x.get("distance_km", float("inf")), -(x.get("rating") or 0.0)))
+        # Sorting: 'distance' (nearest first), 'name' (alphabetical), 'city' (by city)
+        if sort_by == "name":
+            results.sort(key=lambda x: x.get("name", ""))
+        elif sort_by == "city":
+            results.sort(key=lambda x: (x.get("city", ""), x.get("distance_km", float("inf"))))
         else:
-            results.sort(key=lambda x: (-(x.get("rating") or 0.0), -(x.get("review_count") or 0)))
+            # Default: Nearest Distance First (fallback to name if distance unavailable)
+            results.sort(key=lambda x: (x.get("distance_km", float("inf")), x.get("name", "")))
 
         return results
 
@@ -543,6 +535,6 @@ class SupportCentreService:
         lng: Optional[float] = None,
         limit: int = 4
     ) -> List[Dict[str, Any]]:
-        """Return top-rated hospital suggestions, prioritizing apex centers and proximity if coordinates given."""
-        centres = cls.list_centres(lat=lat, lng=lng, sort_by="rating")
+        """Return accredited apex healthcare suggestions, prioritizing proximity."""
+        centres = cls.list_centres(lat=lat, lng=lng, sort_by="distance")
         return centres[:limit]
