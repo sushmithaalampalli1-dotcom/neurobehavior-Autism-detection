@@ -31,6 +31,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ ./backend/
 COPY training/ ./training/
 COPY demo_samples/ ./demo_samples/
+COPY data_config/ ./data_config/
 COPY wsgi.py .
 COPY run_server.py .
 COPY .env.example .env

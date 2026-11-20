@@ -64,6 +64,44 @@ def _send_reset_email(to_email: str, user_name: str, code: str) -> bool:
     return True
 
 
+def _backup_registered_user(user):
+    """Persist user demographic and authentication record to persistent JSON backup."""
+    try:
+        from pathlib import Path
+        import json
+        from backend.config import Config, BASE_DIR
+        for backup_path in [
+            BASE_DIR / "data_config" / "registered_users_registry.json",
+            Config.STORAGE_DIR / "registered_users_registry.json"
+        ]:
+            backup_path.parent.mkdir(parents=True, exist_ok=True)
+            existing = {}
+            if backup_path.exists():
+                try:
+                    with open(backup_path, "r", encoding="utf-8") as f:
+                        existing = json.load(f)
+                except Exception:
+                    existing = {}
+
+            existing[user.email.strip().lower()] = {
+                "full_name": user.full_name,
+                "email": user.email.strip().lower(),
+                "password_hash": user.password_hash,
+                "role": user.role,
+                "age": user.age,
+                "gender": user.gender,
+                "blood_group": user.blood_group,
+                "phone_number": user.phone_number,
+                "parent_name": user.parent_name,
+                "parent_phone": user.parent_phone,
+                "parent_relation": user.parent_relation,
+            }
+            with open(backup_path, "w", encoding="utf-8") as f:
+                json.dump(existing, f, indent=2)
+    except Exception as exc:
+        print(f"[!] Warning backing up user: {exc}")
+
+
 @auth_bp.route("/register", methods=["POST"])
 def register():
     """Register a new user account with complete demographics and parent/guardian verification."""
@@ -129,6 +167,7 @@ def register():
     user.set_password(password)
     db.session.add(user)
     db.session.commit()
+    _backup_registered_user(user)
 
     token = generate_auth_token(user.id, user.role)
 
@@ -215,6 +254,7 @@ def reset_password():
     user.reset_token = None
     user.reset_token_expiry = None
     db.session.commit()
+    _backup_registered_user(user)
 
     return jsonify({
         "success": True,

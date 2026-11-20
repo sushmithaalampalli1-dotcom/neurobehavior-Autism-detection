@@ -111,8 +111,8 @@ export const api = {
       body: payload,
     });
     if (data.token) {
-      authStorage.setToken(data.token);
-      authStorage.setUser(data.user);
+      authStorage.setToken(data.token, true);
+      authStorage.setUser(data.user, true);
     }
     return data;
   },
@@ -131,14 +131,14 @@ export const api = {
     });
   },
 
-  async login(email, password, remember = false) {
+  async login(email, password, remember = true) {
     const data = await request('/auth/login', {
       method: 'POST',
       body: { email, password },
     });
     if (data.token) {
-      authStorage.setToken(data.token, remember);
-      authStorage.setUser(data.user, remember);
+      authStorage.setToken(data.token, true);
+      authStorage.setUser(data.user, true);
     }
     return data;
   },

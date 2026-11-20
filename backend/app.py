@@ -115,8 +115,46 @@ def create_app(config_name: str = None) -> Flask:
         # Seed synthetic demo personas if enabled
         if app.config.get("SEED_DEMO_USERS", True):
             _seed_demo_personas()
+        # Restore all registered accounts from persistent JSON backup
+        _restore_registered_users()
 
     return app
+
+
+def _restore_registered_users():
+    """Restore all registered patient and clinician accounts from persistent JSON backups."""
+    from backend.models.user import User
+    from backend.config import Config, BASE_DIR
+    import json
+    for backup_path in [
+        Config.STORAGE_DIR / "registered_users_registry.json",
+        BASE_DIR / "data_config" / "registered_users_registry.json"
+    ]:
+        if backup_path.exists():
+            try:
+                with open(backup_path, "r", encoding="utf-8") as f:
+                    registry = json.load(f)
+                for email_k, u_data in registry.items():
+                    email_clean = email_k.strip().lower()
+                    existing = User.query.filter_by(email=email_clean).first()
+                    if not existing:
+                        new_u = User(
+                            full_name=u_data.get("full_name", "Registered User"),
+                            email=email_clean,
+                            password_hash=u_data["password_hash"],
+                            role=u_data.get("role", "patient"),
+                            age=u_data.get("age"),
+                            gender=u_data.get("gender"),
+                            blood_group=u_data.get("blood_group"),
+                            phone_number=u_data.get("phone_number"),
+                            parent_name=u_data.get("parent_name"),
+                            parent_phone=u_data.get("parent_phone"),
+                            parent_relation=u_data.get("parent_relation"),
+                        )
+                        db.session.add(new_u)
+                db.session.commit()
+            except Exception as e:
+                print(f"[*] Warning restoring registered users: {e}")
 
 
 def _run_db_migrations():
