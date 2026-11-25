@@ -16,7 +16,7 @@
 \usepackage{microtype}
 \usepackage{balance}
 \usepackage{tikz}
-\usetikzlibrary{shapes.geometric, arrows.meta, positioning}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc}
 
 % Hyphenation fixes
 \hyphenation{op-ti-cal net-works semi-conduc-tor neu-ro-im-ag-ing pre-pro-cess-ing}
@@ -144,88 +144,90 @@ The behavioral screening module adopts the verified 10-item Indian Autism Screen
 \section{Proposed Solution and Methodology}
 
 % -------------------------------------------------------------------------
-% CENTERED ARCHITECTURE DIAGRAM
+% FIGURE 1: SIMPLIFIED END-TO-END SYSTEM PIPELINE (CLEAN & MODULAR)
 % -------------------------------------------------------------------------
 \begin{figure*}[!t]
 \centering
+\resizebox{\textwidth}{!}{
 \begin{tikzpicture}[
     font=\small,
-    formatbox/.style={rectangle, draw=blue!70, fill=blue!8, rounded corners=4pt, thick, align=center, font=\footnotesize, minimum height=0.85cm, text width=3.2cm},
-    layerbox/.style={rectangle, draw=teal!80, fill=teal!10, rounded corners=4pt, thick, align=center, font=\footnotesize, minimum height=0.85cm, text width=4.3cm},
-    mainbox/.style={rectangle, draw=gray!70, fill=gray!5, rounded corners=5pt, thick, align=center, text width=15.2cm, minimum height=0.9cm, inner sep=6pt},
-    decisionbox/.style={rectangle, draw=orange!80, fill=orange!10, rounded corners=5pt, thick, align=center, text width=15.2cm, minimum height=0.9cm, inner sep=6pt},
-    outbox/.style={rectangle, draw=purple!80, fill=purple!10, rounded corners=4pt, thick, align=center, font=\footnotesize, minimum height=0.9cm, text width=6.9cm},
-    arrow/.style={-{Stealth[scale=1.1]}, very thick, draw=gray!70}
+    stepbox/.style={rectangle, draw=#1!80, fill=#1!8, rounded corners=6pt, thick, align=left, minimum height=4.2cm, text width=3.7cm, inner sep=8pt},
+    stepbadge/.style={rectangle, draw=#1!90, fill=#1!80, rounded corners=3pt, font=\scriptsize\bfseries\color{white}, inner sep=3pt},
+    arrow/.style={-{Stealth[scale=1.2]}, very thick, draw=gray!70}
 ]
 
-% STEP 1: Supported Input Formats
-\node[formatbox] (fmt1) at (-5.4, 0) {\textbf{3D Medical NIfTI}\\\texttt{.nii} \ / \ \texttt{.nii.gz}};
-\node[formatbox] (fmt2) at (-1.8, 0) {\textbf{Lossless Slice}\\\texttt{.png}};
-\node[formatbox] (fmt3) at (1.8, 0) {\textbf{Standard Hospital}\\\texttt{.jpg} \ / \ \texttt{.jpeg}};
-\node[formatbox] (fmt4) at (5.4, 0) {\textbf{Smartphone Photo}\\(Film on Lightbox)};
-
-% STEP 2: Ingestion & Preprocessing
-\node[mainbox, below=0.6cm of $(fmt2)!0.5!(fmt3)$] (step1) {
-    \textbf{Step 1: Universal Image Ingestion and Normalization}\\
-    Mid-axial slice selection $\cdot$ Glare and tilt correction for mobile photos $\cdot$ Standardized intensity ($0$ to $1$)
+% STEP 1: Universal Scan Ingestion
+\node[stepbox=blue] (step1) at (0, 0) {
+    \vspace{0.3cm}
+    \textbf{\color{blue!90} Universal Ingestion}\\[4pt]
+    \footnotesize
+    $\bullet$ \textbf{Any Scan Format:}\\
+    \quad $\cdot$ 3D NIfTI (\texttt{.nii})\\
+    \quad $\cdot$ 2D Lossless (\texttt{.png})\\
+    \quad $\cdot$ Clinical (\texttt{.jpeg})\\
+    \quad $\cdot$ Phone Photo (Lightbox)\\
+    $\bullet$ Auto-center mid-axial slice\\
+    $\bullet$ Adaptive glare \& tilt filter
 };
+\node[stepbadge=blue, anchor=north west] at ([xshift=6pt, yshift=-6pt]step1.north west) {STEP 1};
 
-% STEP 3: 2.5D Tensor
-\node[layerbox, below=0.8cm of step1.south, xshift=-4.8cm] (lay1) {\textbf{Layer 1: Raw Intensity}\\Brain tissue radiodensity\\($224 \times 224$)};
-\node[layerbox, below=0.8cm of step1.south] (lay2) {\textbf{Layer 2: Sobel Edges}\\Gray/white matter boundaries\\($224 \times 224$)};
-\node[layerbox, below=0.8cm of step1.south, xshift=4.8cm] (lay3) {\textbf{Layer 3: CLAHE Contrast}\\Deep brain subcortical nuclei\\($224 \times 224$)};
-
-% STEP 4: Feature Extraction & Brain Symmetry
-\node[mainbox, below=0.6cm of lay2] (step3) {
-    \textbf{Step 2: Multi-Scale Brain Pattern Extraction}\\
-    MobileNetV2 Deep Textures (1,280 values) \quad$\vert$\quad Custom 4-Stage CNN (64 shapes) \quad$\vert$\quad Left-vs-Right Brain Symmetry
+% STEP 2: 2.5D Tensor Synthesis
+\node[stepbox=teal, right=0.7cm of step1] (step2) {
+    \vspace{0.3cm}
+    \textbf{\color{teal!90} 2.5D Tensor Fusion}\\[4pt]
+    \footnotesize
+    $\bullet$ \textbf{3 Complementary Layers:}\\
+    \quad $\cdot$ Ch 1: Raw Tissue Anatomy\\
+    \quad $\cdot$ Ch 2: Sobel Edge Gradients\\
+    \quad $\cdot$ Ch 3: CLAHE Subcortical\\
+    $\bullet$ Standard Tensor: $224 \times 224 \times 3$\\
+    $\bullet$ High detail, zero 3D lag
 };
+\node[stepbadge=teal, anchor=north west] at ([xshift=6pt, yshift=-6pt]step2.north west) {STEP 2};
 
-% STEP 5: Calibrated Classifier
-\node[decisionbox, below=0.6cm of step3] (step4) {
-    \textbf{Step 3: Calibrated Soft-Voting Ensemble Classifier}\\
-    Gradient Boosted Trees (Weight 3) + HistGB (Weight 3) + Logistic Regression (Weight 2)\\
-    Decision Threshold Optimized via Youden's $J$ Formula ($\theta^* = \arg\max_{\theta}[\text{Sensitivity}(\theta) + \text{Specificity}(\theta) - 1]$)
+% STEP 3: Multi-Scale AI Classifier
+\node[stepbox=purple, right=0.7cm of step1.east |- step2.east, xshift=0.7cm] (step3) {
+    \vspace{0.3cm}
+    \textbf{\color{purple!90} Deep AI Ensemble}\\[4pt]
+    \footnotesize
+    $\bullet$ \textbf{Feature Extraction:}\\
+    \quad $\cdot$ MobileNetV2 Textures\\
+    \quad $\cdot$ Bilateral Brain Asymmetry\\
+    $\bullet$ \textbf{Soft-Voting Classifier:}\\
+    \quad $\cdot$ Gradient Boosted Trees\\
+    \quad $\cdot$ Histogram Boosting\\
+    \quad $\cdot$ Calibrated Logistic Reg.\\
+    $\bullet$ \textbf{95.2\% Multi-Site Accuracy}
 };
+\node[stepbadge=purple, anchor=north west] at ([xshift=6pt, yshift=-6pt]step3.north west) {STEP 3};
 
-% STEP 6: Final Outputs
-\node[outbox, below left=0.7cm and 0.4cm of step4.south] (out1) {
-    \textbf{Doctor-Ready Medical PDF Report}\\
-    Patient details, brain scan slice, itemized\\
-    10-question IASQ score, and RPwD Act disclaimers
+% STEP 4: Clinical Referral Action
+\node[stepbox=green!70!black, right=0.7cm of step3] (step4) {
+    \vspace{0.3cm}
+    \textbf{\color{green!60!black} Clinical Action}\\[4pt]
+    \footnotesize
+    $\bullet$ \textbf{Autism Probability Score}\\
+    $\bullet$ \textbf{IASQ 10-Q Parent Intake}\\
+    $\bullet$ \textbf{Doctor-Ready PDF Report:}\\
+    \quad $\cdot$ Patient info + Scan slice\\
+    \quad $\cdot$ RPwD Act compliant\\
+    $\bullet$ \textbf{OpenStreetMap Routing:}\\
+    \quad $\cdot$ Haversine to nearest clinic
 };
-
-\node[outbox, below right=0.7cm and 0.4cm of step4.south] (out2) {
-    \textbf{OpenStreetMap Referral Directory}\\
-    Haversine geodesic road distance navigation\\
-    to the nearest certified child development center
-};
+\node[stepbadge=green!70!black, anchor=north west] at ([xshift=6pt, yshift=-6pt]step4.north west) {STEP 4};
 
 % Connecting Arrows
-\draw[arrow] (fmt1.south) -- (fmt1.south |- step1.north);
-\draw[arrow] (fmt2.south) -- (fmt2.south |- step1.north);
-\draw[arrow] (fmt3.south) -- (fmt3.south |- step1.north);
-\draw[arrow] (fmt4.south) -- (fmt4.south |- step1.north);
-
-\draw[arrow] (step1) -- (lay1);
-\draw[arrow] (step1) -- (lay2);
-\draw[arrow] (step1) -- (lay3);
-
-\draw[arrow] (lay1) -- (lay1 |- step3.north);
-\draw[arrow] (lay2) -- (step3.north);
-\draw[arrow] (lay3) -- (lay3 |- step3.north);
-
-\draw[arrow] (step3) -- (step4);
-
-\draw[arrow] (step4.south) -| (out1.north);
-\draw[arrow] (step4.south) -| (out2.north);
+\draw[arrow] (step1.east) -- (step2.west);
+\draw[arrow] (step2.east) -- (step3.west);
+\draw[arrow] (step3.east) -- (step4.west);
 
 \end{tikzpicture}
-\caption{End-to-end architecture of the NeuroBehavior-ASD screening and referral framework, illustrating the data flow from multi-format scan ingestion to 2.5D tensor synthesis, multi-scale feature extraction, calibrated classification, and clinical action mapping.}
-\label{fig:centered_architecture}
+}
+\caption{Simplified end-to-end operational pipeline of the NeuroBehavior-ASD screening and referral framework. The 4-stage pipeline ingests diverse medical image formats, synthesizes multi-channel 2.5D spatial tensors, extracts deep texture and symmetry representations, and executes calibrated classification with geospatial referral guidance.}
+\label{fig:simplified_pipeline}
 \end{figure*}
 
-The architecture of the proposed NeuroBehavior-ASD framework is illustrated in Fig.~\ref{fig:centered_architecture}.
+The architecture of the proposed NeuroBehavior-ASD framework is illustrated in Fig.~\ref{fig:simplified_pipeline}.
 
 \subsection{Universal Multi-Format Clinical Ingestion Engine}
 To accommodate the disparate operational formats found across primary clinics, tertiary hospital PACS, and remote healthcare facilities, we engineered an adaptive multi-format ingestion module:
@@ -272,6 +274,65 @@ To capture both boundary gradients and deep subcortical density without 3D param
     C_{3} = \text{CLAHE}(I_{\text{norm}}; \, \tau = 2.0, \, \text{grid} = 8 \times 8)
     \end{equation}
 \end{enumerate}
+
+% -------------------------------------------------------------------------
+% FIGURE 2: 2.5D TENSOR SYNTHESIS (INTUITIVE 3-CHANNEL DECOMPOSITION)
+% -------------------------------------------------------------------------
+\begin{figure}[!t]
+\centering
+\resizebox{\columnwidth}{!}{
+\begin{tikzpicture}[
+    font=\small,
+    box/.style={rectangle, draw=#1!80, fill=#1!8, rounded corners=5pt, thick, align=center, inner sep=6pt},
+    chbox/.style={rectangle, draw=#1!80, fill=#1!10, rounded corners=4pt, thick, align=left, text width=4.8cm, inner sep=6pt},
+    arrow/.style={-{Stealth[scale=1.1]}, very thick, draw=gray!70}
+]
+
+% Input Slice
+\node[box=gray, text width=2.5cm] (input) at (0, 0) {
+    \textbf{Input Scan}\\[2pt]
+    \footnotesize Grayscale Slice\\
+    ($224 \times 224 \times 1$)
+};
+
+% Channels
+\node[chbox=red, right=1.2cm of input, yshift=1.45cm] (ch1) {
+    \textbf{\color{red!80!black}Channel 1: Raw Intensity}\\
+    \footnotesize Macro-anatomy \& brain tissue
+};
+
+\node[chbox=teal, right=1.2cm of input] (ch2) {
+    \textbf{\color{teal!80!black}Channel 2: Sobel Gradient}\\
+    \footnotesize Gray/white matter boundaries
+};
+
+\node[chbox=blue, right=1.2cm of input, yshift=-1.45cm] (ch3) {
+    \textbf{\color{blue!80!black}Channel 3: CLAHE Contrast}\\
+    \footnotesize Subcortical nuclei enhancement
+};
+
+% Output Tensor
+\node[box=purple, text width=2.7cm, right=1.2cm of ch2] (output) {
+    \textbf{\color{purple!90}2.5D Tensor}\\[2pt]
+    \footnotesize Color-Stacked\\
+    ($224 \times 224 \times 3$)\\[3pt]
+    \scriptsize \color{gray!80!black}Enables 2D CNNs to\\perceive 3D textures
+};
+
+% Connecting Arrows
+\draw[arrow] (input.east) -- (ch1.west);
+\draw[arrow] (input.east) -- (ch2.west);
+\draw[arrow] (input.east) -- (ch3.west);
+
+\draw[arrow] (ch1.east) -- (output.west);
+\draw[arrow] (ch2.east) -- (output.west);
+\draw[arrow] (ch3.east) -- (output.west);
+
+\end{tikzpicture}
+}
+\caption{Intuitive decomposition of 2.5D Spatial Tensor Synthesis. A single grayscale brain MRI slice is split into raw intensity, Sobel boundary gradients, and CLAHE subcortical contrast before fusion into a 3-channel tensor compatible with pre-trained vision backbones.}
+\label{fig:simplified_tensor}
+\end{figure}
 
 \subsection{Multi-Scale Feature Extraction Architecture}
 Features are extracted across multi-scale visual representations:
@@ -393,6 +454,67 @@ To ensure ethical and medically grounded decision support, algorithmic neuroimag
     \item \textbf{Partial Concordance ($\text{MRI} = \text{Control} \land \text{IASQ} \ge 2$):} Typical brain morphology with elevated behavioral scores. Clinical child psychology assessment recommended.
     \item \textbf{Concordant Negative ($\text{MRI} = \text{Control} \land \text{IASQ} < 2$):} Both assessments indicate low autism probability. Routine developmental milestone tracking advised.
 \end{itemize}
+
+% -------------------------------------------------------------------------
+% FIGURE 3: DUAL-MODALITY CLINICAL DECISION FLOW (BRAIN + BEHAVIOR)
+% -------------------------------------------------------------------------
+\begin{figure}[!t]
+\centering
+\resizebox{\columnwidth}{!}{
+\begin{tikzpicture}[
+    font=\small,
+    inbox/.style={rectangle, draw=#1!80, fill=#1!10, rounded corners=4pt, thick, align=center, text width=3.2cm, inner sep=6pt},
+    centerbox/.style={rectangle, draw=orange!80, fill=orange!10, rounded corners=5pt, thick, align=center, text width=2.4cm, inner sep=6pt},
+    actionbox/.style={rectangle, draw=#1!80, fill=#1!8, rounded corners=4pt, thick, align=left, text width=4.2cm, inner sep=5pt},
+    arrow/.style={-{Stealth[scale=1.1]}, very thick, draw=gray!70}
+]
+
+% Inputs
+\node[inbox=blue] (mri) at (0, 1.1) {\textbf{MRI AI Scan Result}\\ \footnotesize Autism Likelihood ($P \ge 0.50$)};
+\node[inbox=teal] (iasq) at (0, -1.1) {\textbf{Parent IASQ 10-Q}\\ \footnotesize Behavioral Score ($S \ge 2$)};
+
+% Core Engine
+\node[centerbox, right=0.8cm of $(mri)!0.5!(iasq)$] (core) {
+    \textbf{\color{orange!90!black}Concordance}\\
+    \textbf{\color{orange!90!black}Engine}\\[2pt]
+    \scriptsize Cross-checks Brain + Behavior
+};
+
+% 4 Action Boxes
+\node[actionbox=red, right=0.9cm of core, yshift=1.65cm] (act1) {
+    \textbf{\color{red!80!black}High-Priority Urgent Referral}\\
+    \scriptsize Both MRI \& IASQ Positive $\to$ Tertiary Child Center
+};
+
+\node[actionbox=orange, right=0.9cm of core, yshift=0.55cm] (act2) {
+    \textbf{\color{orange!80!black}Pediatric Neurology Review}\\
+    \scriptsize MRI Positive, Behavior Low $\to$ Check Brain Asymmetry
+};
+
+\node[actionbox=yellow!70!black, right=0.9cm of core, yshift=-0.55cm] (act3) {
+    \textbf{\color{yellow!60!black}Child Psychology Evaluation}\\
+    \scriptsize MRI Typical, Behavior High $\to$ Behavioral Therapy
+};
+
+\node[actionbox=green!70!black, right=0.9cm of core, yshift=-1.65cm] (act4) {
+    \textbf{\color{green!60!black}Typical Milestone Tracking}\\
+    \scriptsize Both Typical $\to$ Routine Pediatric Follow-up
+};
+
+% Connecting Arrows
+\draw[arrow] (mri.east) -- (core.west);
+\draw[arrow] (iasq.east) -- (core.west);
+
+\draw[arrow] (core.east) -- (act1.west);
+\draw[arrow] (core.east) -- (act2.west);
+\draw[arrow] (core.east) -- (act3.west);
+\draw[arrow] (core.east) -- (act4.west);
+
+\end{tikzpicture}
+}
+\caption{Dual-modality clinical decision tree synthesizing neuroimaging predictions and IASQ behavioral scores into distinct triage pathways.}
+\label{fig:simplified_decision}
+\end{figure}
 
 \subsection{Full-Stack Architecture and Geospatial Mapping}
 The software platform is implemented as an end-to-end web portal:
