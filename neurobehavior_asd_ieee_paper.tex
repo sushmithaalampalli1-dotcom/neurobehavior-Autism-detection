@@ -227,41 +227,42 @@ The behavioral screening module adopts the verified 10-item Indian Autism Screen
 \label{fig:simplified_pipeline}
 \end{figure*}
 
-The architecture of the proposed NeuroBehavior-ASD framework is illustrated in Fig.~\ref{fig:simplified_pipeline}.
+The architecture of the proposed NeuroBehavior-ASD framework is illustrated in Fig.~\ref{fig:simplified_pipeline}. The pipeline operates in four streamlined steps: (1) universal ingestion of any hospital scan or camera capture, (2) synthesis of a 3-layer 2.5D spatial tensor, (3) deep feature and brain symmetry extraction paired with a calibrated classifier, and (4) clinician decision support with automated PDF generation and geospatial referral.
 
 \subsection{Universal Multi-Format Clinical Ingestion Engine}
-To accommodate the disparate operational formats found across primary clinics, tertiary hospital PACS, and remote healthcare facilities, we engineered an adaptive multi-format ingestion module:
+In real-world healthcare settings, brain imaging archives vary drastically between tertiary hospitals and community health centers. Primary clinics and rural hospitals frequently lack specialized PACS archives, often storing scans as standard JPEGs or as physical film sheets displayed on optical lightboxes. To make early screening widely accessible without requiring specialized hardware, our ingestion engine handles four distinct input modalities:
 \begin{enumerate}
-    \item \textbf{3D Volumetric NIfTI (\texttt{.nii}, \texttt{.nii.gz}):} Volumetric arrays $V \in \mathbb{R}^{X \times Y \times Z}$ are ingested via \texttt{NiBabel}, verified for spatial affine orthogonality, and re-oriented into canonical RAS+ anatomical space. The mid-brain axial cross-section intersecting subcortical striatal structures and the corpus callosum is extracted:
+    \item \textbf{3D Volumetric NIfTI (\texttt{.nii}, \texttt{.nii.gz}):} For research and tertiary hospital scans, the 3D volume is ingested using \texttt{NiBabel}, aligned into standard anatomical space, and the central axial cross-section intersecting the corpus callosum and basal ganglia is automatically sliced:
     \begin{equation}
     I_{\text{axial}} = V[:, :, z_{\text{mid}}], \quad z_{\text{mid}} = \left\lfloor \frac{Z}{2} \right\rfloor
     \end{equation}
     
-    \item \textbf{2D Lossless PNG (\texttt{.png}):} Uncompressed digital grayscale slices exported directly from hospital diagnostic consoles are loaded without loss of spatial fidelity.
+    \item \textbf{2D Digital Grayscale PNG (\texttt{.png}):} Uncompressed diagnostic console exports are loaded directly with zero loss in spatial fidelity.
     
-    \item \textbf{2D Clinical JPEG (\texttt{.jpg}, \texttt{.jpeg}):} Standard compressed clinical exports and web PACS snapshots are ingested and decoded into 8-bit luminescence arrays.
+    \item \textbf{2D Clinical JPEG (\texttt{.jpg}, \texttt{.jpeg}):} Standard compressed clinical web exports and PACS snapshots are ingested and decoded into standardized arrays.
     
-    \item \textbf{Point-of-Care Mobile Smartphone Lightbox Captures:} Clinicians frequently photograph physical diagnostic films mounted on optical lightboxes or workstation monitors. The system detects mobile camera captures by measuring chromatic dispersion across color planes:
+    \item \textbf{Point-of-Care Smartphone Lightbox Captures:} When clinicians photograph physical film sheets held against a lightbox or monitor, the photograph often contains color cast, ambient glare, and tilted borders. The engine automatically detects mobile captures by computing color dispersion across RGB channels:
     \begin{equation}
     \Delta_{\text{RGB}} = \frac{1}{W \cdot H} \sum_{x=1}^{W} \sum_{y=1}^{H} |R(x, y) - G(x, y)|
     \end{equation}
-    Images with $\Delta_{\text{RGB}} > 3.0$ or non-square aspect ratios ($|W/H - 1.0| > 0.1$) undergo automated perspective alignment, outer illuminator border cropping, and adaptive glare suppression. Cranial positioning is validated by asserting dark peripheral air margins ($C_{\text{corner}} < 0.15 \cdot C_{\text{center}}$).
+    If $\Delta_{\text{RGB}} > 3.0$, the image is identified as an optical capture. The engine straightens perspective tilt, crops bright illuminator lamp margins, and suppresses specular surface reflections.
 \end{enumerate}
 
-All inputs are converted to a standardized single-channel float array and intensity-normalized via percentile-clipped min-max rescaling:
+Every ingested scan is rescaled to a uniform $224 \times 224$ matrix and normalized between $0.0$ and $1.0$ using percentile-clipped min-max scaling to prevent background scanner illumination from biasing downstream predictions:
 \begin{equation}
 I_{\text{norm}}(x, y) = \frac{I(x, y) - P_{1}(I)}{P_{99}(I) - P_{1}(I) + \epsilon}, \quad I_{\text{norm}} \in [0, 1]
 \end{equation}
-where $P_1$ and $P_{99}$ represent the 1st and 99th intensity percentiles, respectively.
+where $P_1$ and $P_{99}$ represent the 1st and 99th intensity percentiles.
 
 \subsection{2.5D Multi-Channel Spatial Tensor Synthesis}
-To capture both boundary gradients and deep subcortical density without 3D parameter inflation, we synthesize a multi-channel spatial tensor $\mathbf{X} \in \mathbb{R}^{224 \times 224 \times 3}$:
+Full 3D convolutional neural networks demand expensive, high-power GPUs that are unavailable in primary healthcare centers. Conversely, standard 2D grayscale slices discard critical boundary and contrast information. To achieve 3D-level accuracy on lightweight hardware, we synthesize a \textbf{3-channel 2.5D spatial tensor} $\mathbf{X} \in \mathbb{R}^{224 \times 224 \times 3}$, illustrated in Fig.~\ref{fig:simplified_tensor}:
 \begin{equation}
 \mathbf{X} = \left[ C_{1}, \, C_{2}, \, C_{3} \right]
 \end{equation}
 \begin{enumerate}
-    \item \textbf{Channel 1 ($C_{1}$ -- Structural Density):} Raw normalized intensity map $I_{\text{norm}}$, preserving macro-anatomical tissue radiodensity.
-    \item \textbf{Channel 2 ($C_{2}$ -- Spatial Gradient Magnitude):} Directional boundary transitions across gray-white matter interfaces computed via 2D spatial Sobel kernels:
+    \item \textbf{Channel 1 ($C_{1}$ -- Structural Anatomy):} The raw normalized intensity map $I_{\text{norm}}$, preserving overall tissue radiodensity, ventricle size, and macro-anatomical brain geometry.
+    
+    \item \textbf{Channel 2 ($C_{2}$ -- Tissue Boundaries via Sobel Edges):} Directional boundary gradients between cerebral gray matter and white matter computed using 2D spatial Sobel filters:
     \begin{equation}
     G_x = \begin{bmatrix} -1 & 0 & +1 \\ -2 & 0 & +2 \\ -1 & 0 & +1 \end{bmatrix} * I_{\text{norm}}, \quad
     G_y = \begin{bmatrix} -1 & -2 & -1 \\ 0 & 0 & 0 \\ +1 & +2 & +1 \end{bmatrix} * I_{\text{norm}}
@@ -269,11 +270,13 @@ To capture both boundary gradients and deep subcortical density without 3D param
     \begin{equation}
     C_{2}(x, y) = \sqrt{G_x(x, y)^2 + G_y(x, y)^2}
     \end{equation}
-    \item \textbf{Channel 3 ($C_{3}$ -- Subcortical Contrast):} Enhanced deep nuclei visibility generated via Contrast Limited Adaptive Histogram Equalization (CLAHE) with clip limit $\tau = 2.0$ over an $8 \times 8$ grid:
+    
+    \item \textbf{Channel 3 ($C_{3}$ -- Subcortical Contrast via CLAHE):} Enhanced deep brain visibility produced using Contrast Limited Adaptive Histogram Equalization ($\tau = 2.0$, $8 \times 8$ grid), brightening subcortical nuclei that appear faint in standard scans:
     \begin{equation}
     C_{3} = \text{CLAHE}(I_{\text{norm}}; \, \tau = 2.0, \, \text{grid} = 8 \times 8)
     \end{equation}
 \end{enumerate}
+This 3-channel formulation enables lightweight pre-trained vision models (like MobileNetV2) to process complex neuroanatomical textures without computational lag.
 
 % -------------------------------------------------------------------------
 % FIGURE 2: 2.5D TENSOR SYNTHESIS (INTUITIVE 3-CHANNEL DECOMPOSITION)
