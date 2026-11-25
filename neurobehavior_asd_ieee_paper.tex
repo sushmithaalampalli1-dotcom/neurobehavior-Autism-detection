@@ -362,7 +362,33 @@ J(\theta) = \text{Sensitivity}(\theta) + \text{Specificity}(\theta) - 1
 \begin{equation}
 \theta^* = \arg\max_{\theta \in [0.1, 0.9]} J(\theta)
 \end{equation}
-The optimal threshold $\theta^*$ is fixed on the validation split and subsequently applied directly to the untouched test set.
+The optimal threshold $\theta^*$ is fixed on the validation split and subsequently applied directly to the untouched test set, ensuring that sensitivity and specificity remain equally balanced.
+
+\subsection{End-to-End Proposed System Architecture and Execution Workflow}
+The cohesive end-to-end architecture of the proposed NeuroBehavior-ASD framework is depicted in Fig.~\ref{fig:proposed_system_architecture}. Having defined the individual mathematical formulations for image ingestion, 2.5D spatial tensor synthesis, multi-scale feature extraction, and ensemble stacking, this subsection details the operational pipeline that ties these modular components into a unified, clinic-ready decision support workflow.
+
+% -------------------------------------------------------------------------
+% PROPOSED SYSTEM ARCHITECTURE PHOTO (PIPELINE ARCHITECTURE)
+% -------------------------------------------------------------------------
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=\textwidth]{pipeline_architecture.png}
+\caption{Overall proposed system architecture of the NeuroBehavior-ASD screening and referral framework, illustrating the complete data flow from multi-format scan ingestion and 2.5D tensor synthesis to multi-scale deep feature extraction, calibrated ensemble classification, and clinical action mapping.}
+\label{fig:proposed_system_architecture}
+\end{figure*}
+
+As illustrated in the proposed system diagram (Fig.~\ref{fig:proposed_system_architecture}), the pipeline processes clinical data through five interconnected stages:
+\begin{enumerate}
+    \item \textbf{Stage 1: Multi-Format Clinical Scan Ingestion:} The system accepts diverse radiological inputs across 3D NIfTI volumes, lossless PNG slices, standard compressed hospital JPEGs, and smartphone lightbox photographs. Optical camera captures automatically trigger perspective rectification, lightbox frame cropping, and glare mitigation to establish baseline image quality before feature calculation.
+    
+    \item \textbf{Stage 2: 2.5D Spatial Tensor Synthesis:} The normalized grayscale matrix is converted into a 3-channel tensor ($224 \times 224 \times 3$), encoding raw tissue density in Channel 1, directional gray-white matter boundary gradients via Sobel operators in Channel 2, and subcortical nuclei contrast via CLAHE in Channel 3. This structure provides spatial depth cues without requiring computationally intensive 3D convolutions.
+    
+    \item \textbf{Stage 3: Multi-Scale Pattern and Symmetry Extraction:} The 2.5D tensor is routed through pre-trained MobileNetV2 inverted residual blocks to extract 1,280 fine texture descriptors, a 4-stage convolutional network to capture 64 latent shape features, and a sagittal bisection operator to measure hemispheric left-vs-right brain asymmetry indices. Concatenating these representations yields a compact, 1,350-dimensional biomarker vector invariant to scanner-specific artifacts.
+    
+    \item \textbf{Stage 4: Calibrated Decision Stacking:} The feature vector is classified through a weighted soft-voting meta-ensemble (Gradient Boosted Trees, regularized Histogram Gradient Boosting, and Calibrated Logistic Regression). The optimal classification threshold ($\theta^*$) is mathematically calibrated via Youden's $J$ statistic to maintain balanced sensitivity and specificity across diverse clinical cohorts.
+    
+    \item \textbf{Stage 5: Dual-Modality Action and Geospatial Referral:} The algorithmic neuroimaging probability is cross-referenced with the caregiver's 10-item Indian Autism Screening Questionnaire (IASQ) score. If high risk is identified, the system automatically compiles an official, doctor-readable diagnostic PDF report and executes Haversine geodesic routing on OpenStreetMap to navigate the family to the nearest accredited child development and therapy center.
+\end{enumerate}
 
 % =========================================================================
 % SECTION V: EXPERIMENTAL RESULTS AND DISCUSSION
